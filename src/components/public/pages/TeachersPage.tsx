@@ -139,6 +139,7 @@ export function TeachersPage() {
   const [loading, setLoading] = useState(true)
   const [isDemo, setIsDemo] = useState(false)
   const [search, setSearch] = useState('')
+  const [cmsData, setCmsData] = useState<any>(null)
 
   useEffect(() => {
     fetch('/api/teachers')
@@ -160,7 +161,13 @@ export function TeachersPage() {
         setIsDemo(true)
       })
       .finally(() => setLoading(false))
+    fetch('/api/cms/teachers')
+      .then((r) => r.json())
+      .then((data) => setCmsData(data.page?.data || null))
+      .catch(() => setCmsData(null))
   }, [])
+
+  const hero = cmsData?.hero || null
 
   const filtered = useMemo(() => {
     if (!search.trim()) return teachers
@@ -181,8 +188,7 @@ export function TeachersPage() {
         <div
           className="absolute inset-0 opacity-20 bg-cover bg-center"
           style={{
-            backgroundImage:
-              'url(https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1920&q=70)',
+            backgroundImage: `url(${hero?.image || 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1920&q=70'})`,
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-br from-teal-900/60 to-emerald-900/60" />
@@ -195,13 +201,14 @@ export function TeachersPage() {
           >
             <Badge className="mb-4 border-white/30 bg-white/10 text-white backdrop-blur-md hover:bg-white/15">
               <Users className="mr-1.5 h-3.5 w-3.5" />
-              Our Faculty
+              {hero?.badge || 'Our Faculty'}
             </Badge>
             <h1 className="text-4xl font-extrabold text-white sm:text-5xl">
-              Meet our teachers
+              {hero?.title || 'Meet our teachers'}
             </h1>
             <p className="mt-5 max-w-2xl text-lg text-teal-50">
-              Experienced, caring, and passionate educators who inspire our students every day.
+              {hero?.subtitle ||
+                'Experienced, caring, and passionate educators who inspire our students every day.'}
             </p>
           </motion.div>
         </div>

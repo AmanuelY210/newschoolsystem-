@@ -375,9 +375,10 @@ model Certificate {
 
 model CMSPage {
   id        String   @id @default(cuid())
-  slug      String   @unique // home, about, academy, admissions, contact
+  slug      String   @unique // home, about, academy, teachers, students, contact, media
   title     String
-  content   String   // rich text / markdown content
+  content   String   // rich text / markdown content (legacy)
+  data      String?  // JSON string for structured page content (all editable sections)
   bannerImage String?
   metaDescription String?
   published Boolean  @default(true)

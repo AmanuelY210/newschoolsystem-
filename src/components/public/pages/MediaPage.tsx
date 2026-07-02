@@ -178,6 +178,7 @@ export function MediaPage({ type }: MediaPageProps) {
   const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState('all')
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const [cmsData, setCmsData] = useState<any>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -198,6 +199,15 @@ export function MediaPage({ type }: MediaPageProps) {
       .finally(() => {
         if (!cancelled) setLoading(false)
       })
+    fetch('/api/cms/media')
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return
+        setCmsData(data.page?.data || null)
+      })
+      .catch(() => {
+        if (!cancelled) setCmsData(null)
+      })
     return () => {
       cancelled = true
     }
@@ -208,11 +218,14 @@ export function MediaPage({ type }: MediaPageProps) {
     return items.filter((i) => i.category === activeCategory)
   }, [items, activeCategory])
 
-  const title = type === 'photo' ? 'Photo Gallery' : 'Video Gallery'
+  const hero = cmsData?.hero || null
+  const sectionData = type === 'photo' ? cmsData?.photoSection : cmsData?.videoSection
+  const title = sectionData?.title || (type === 'photo' ? 'Photo Gallery' : 'Video Gallery')
   const subtitle =
-    type === 'photo'
+    sectionData?.subtitle ||
+    (type === 'photo'
       ? 'Captured moments of learning, joy, and achievement'
-      : 'Watch our school come alive in motion'
+      : 'Watch our school come alive in motion')
 
   const openLightbox = (i: number) => setLightboxIndex(i)
   const closeLightbox = () => setLightboxIndex(null)
@@ -233,8 +246,7 @@ export function MediaPage({ type }: MediaPageProps) {
         <div
           className="absolute inset-0 opacity-20 bg-cover bg-center"
           style={{
-            backgroundImage:
-              'url(https://images.unsplash.com/photo-1497486751825-1233686d5d80?auto=format&fit=crop&w=1920&q=70)',
+            backgroundImage: `url(${hero?.image || 'https://images.unsplash.com/photo-1497486751825-1233686d5d80?auto=format&fit=crop&w=1920&q=70'})`,
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-br from-teal-900/60 to-emerald-900/60" />
@@ -247,7 +259,7 @@ export function MediaPage({ type }: MediaPageProps) {
           >
             <Badge className="mb-4 border-white/30 bg-white/10 text-white backdrop-blur-md hover:bg-white/15">
               <Icon className="mr-1.5 h-3.5 w-3.5" />
-              Media Center
+              {hero?.badge || 'Media Center'}
             </Badge>
             <h1 className="text-4xl font-extrabold text-white sm:text-5xl">{title}</h1>
             <p className="mt-5 max-w-2xl text-lg text-teal-50">{subtitle}</p>

@@ -42,20 +42,20 @@ interface MediaItem {
   category: string
 }
 
-const STATS = [
-  { label: 'Students', value: '2000+', icon: Users },
-  { label: 'Teachers', value: '50+', icon: GraduationCap },
-  { label: 'Years of Excellence', value: '19+', icon: Calendar },
-  { label: 'Awards Won', value: '25+', icon: Award },
+const DEFAULT_STATS = [
+  { label: 'Students', value: '2000+', icon: 'users' },
+  { label: 'Teachers', value: '50+', icon: 'teachers' },
+  { label: 'Years of Excellence', value: '19+', icon: 'calendar' },
+  { label: 'Awards Won', value: '25+', icon: 'award' },
 ]
 
-const PROGRAMS = [
+const DEFAULT_PROGRAMS = [
   {
     name: 'Primary School',
     grade: 'Grades 1 - 6',
     description:
       'A nurturing foundation that builds curiosity, literacy, numeracy, and social skills through play-based and inquiry-led learning.',
-    icon: BookOpen,
+    icon: 'bookopen',
     image:
       'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=800&q=60',
     color: 'from-teal-500 to-emerald-500',
@@ -65,7 +65,7 @@ const PROGRAMS = [
     grade: 'Grades 7 - 8',
     description:
       'Bridging foundational learning with deeper subject mastery, critical thinking, and exploration of STEM and the arts.',
-    icon: FlaskConical,
+    icon: 'flask',
     image:
       'https://images.unsplash.com/photo-1497486751825-1233686d5d80?auto=format&fit=crop&w=800&q=60',
     color: 'from-emerald-500 to-teal-600',
@@ -75,12 +75,47 @@ const PROGRAMS = [
     grade: 'Grades 9 - 12',
     description:
       'Rigorous academic preparation for university and beyond — with specialized tracks in science, social science, and technology.',
-    icon: Microscope,
+    icon: 'microscope',
     image:
       'https://images.unsplash.com/photo-1571260899304-425eee4c7efc?auto=format&fit=crop&w=800&q=60',
     color: 'from-teal-600 to-emerald-700',
   },
 ]
+
+function getStatIcon(name?: string) {
+  switch ((name || '').toLowerCase()) {
+    case 'users':
+      return Users
+    case 'teachers':
+    case 'teacher':
+      return GraduationCap
+    case 'award':
+      return Award
+    case 'calendar':
+      return Calendar
+    default:
+      return Users
+  }
+}
+
+function getProgramIcon(name?: string) {
+  switch ((name || '').toLowerCase()) {
+    case 'bookopen':
+    case 'book':
+      return BookOpen
+    case 'graduation':
+    case 'graduationcap':
+      return GraduationCap
+    case 'atom':
+    case 'microscope':
+      return Microscope
+    case 'flask':
+    case 'flaskconical':
+      return FlaskConical
+    default:
+      return BookOpen
+  }
+}
 
 const fadeIn = {
   initial: { opacity: 0, y: 24 },
@@ -94,6 +129,7 @@ export function HomePage() {
   const [settings, setSettings] = useState<Record<string, string>>({})
   const [events, setEvents] = useState<EventItem[]>([])
   const [photos, setPhotos] = useState<MediaItem[]>([])
+  const [cmsData, setCmsData] = useState<any>(null)
 
   useEffect(() => {
     fetch('/api/settings')
@@ -108,6 +144,10 @@ export function HomePage() {
       .then((r) => r.json())
       .then((d) => setPhotos((d.media || []).slice(0, 6)))
       .catch(() => {})
+    fetch('/api/cms/home')
+      .then((r) => r.json())
+      .then((data) => setCmsData(data.page?.data || null))
+      .catch(() => setCmsData(null))
   }, [])
 
   const schoolName = settings.school_name || 'Bright Future Academy'
@@ -117,6 +157,36 @@ export function HomePage() {
   const fmtDate = (s: string) =>
     new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
+  // Derive display data from CMS data with fallbacks
+  const hero = cmsData?.hero || null
+  const stats =
+    cmsData?.stats && Array.isArray(cmsData.stats) && cmsData.stats.length > 0
+      ? cmsData.stats.map((s: any) => ({
+          label: s.label || '',
+          value: s.value || '',
+          icon: getStatIcon(s.icon),
+        }))
+      : DEFAULT_STATS.map((s) => ({ ...s, icon: getStatIcon(s.icon) }))
+  const aboutPreview = cmsData?.aboutPreview || null
+  const programs = (
+    cmsData?.programs && Array.isArray(cmsData.programs) && cmsData.programs.length > 0
+      ? cmsData.programs
+      : DEFAULT_PROGRAMS
+  ).map((p: any, i: number) => {
+    const fallback = DEFAULT_PROGRAMS[i % DEFAULT_PROGRAMS.length]
+    return {
+      name: p.title || fallback.name,
+      grade: p.grades || fallback.grade,
+      description: p.description || fallback.description,
+      icon: getProgramIcon(p.icon) || getProgramIcon(fallback.icon),
+      image: p.image || fallback.image,
+      color: p.color || fallback.color,
+    }
+  })
+  const eventsSection = cmsData?.events || null
+  const gallerySection = cmsData?.gallery || null
+  const cta = cmsData?.cta || null
+
   return (
     <div className="bg-white">
       {/* ============== HERO ============== */}
@@ -124,8 +194,7 @@ export function HomePage() {
         <div
           className="absolute inset-0 opacity-20"
           style={{
-            backgroundImage:
-              'url(https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1920&q=70)',
+            backgroundImage: `url(${hero?.image || 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1920&q=70'})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}
@@ -145,7 +214,7 @@ export function HomePage() {
             >
               <Badge className="mb-5 border-white/30 bg-white/10 text-white backdrop-blur-md hover:bg-white/15">
                 <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                Admissions Open for 2025 - 2026
+                {hero?.badge || 'Admissions Open for 2025 - 2026'}
               </Badge>
             </motion.div>
             <motion.h1
@@ -154,7 +223,7 @@ export function HomePage() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl"
             >
-              Welcome to <span className="text-emerald-200">{schoolName}</span>
+              {hero?.title || `Welcome to ${schoolName}`}
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 24 }}
@@ -162,8 +231,8 @@ export function HomePage() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="mt-5 max-w-2xl text-lg leading-relaxed text-teal-50 sm:text-xl"
             >
-              {tagline}. A vibrant community committed to academic excellence,
-              character building, and lifelong learning.
+              {hero?.subtitle ||
+                `${tagline}. A vibrant community committed to academic excellence, character building, and lifelong learning.`}
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 24 }}
@@ -176,7 +245,7 @@ export function HomePage() {
                 onClick={() => navigateToPublic('admission-portal')}
                 className="bg-white text-teal-700 hover:bg-teal-50 shadow-lg"
               >
-                Apply Now
+                {hero?.primaryCta || 'Apply Now'}
                 <ArrowRight className="h-4 w-4" />
               </Button>
               <Button
@@ -185,7 +254,7 @@ export function HomePage() {
                 onClick={() => navigateToPublic('academy')}
                 className="border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white"
               >
-                Explore Academy
+                {hero?.secondaryCta || 'Explore Academy'}
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </motion.div>
@@ -213,7 +282,7 @@ export function HomePage() {
             {...fadeIn}
             className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6"
           >
-            {STATS.map((s) => {
+            {stats.map((s) => {
               const Icon = s.icon
               return (
                 <Card
@@ -244,32 +313,34 @@ export function HomePage() {
                 <div
                   className="relative aspect-[4/3] w-full rounded-2xl bg-cover bg-center shadow-xl"
                   style={{
-                    backgroundImage:
-                      "url(https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=900&q=70)",
+                    backgroundImage: `url(${aboutPreview?.image || 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=900&q=70'})`,
                   }}
                 />
               </div>
             </motion.div>
             <motion.div {...fadeIn} transition={{ duration: 0.5, delay: 0.1 }}>
               <Badge className="mb-3 bg-teal-50 text-teal-700 hover:bg-teal-100">
-                About Our School
+                {aboutPreview?.badge || 'About Our School'}
               </Badge>
               <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-                A tradition of academic excellence and character
+                {aboutPreview?.title ||
+                  'A tradition of academic excellence and character'}
               </h2>
               <p className="mt-4 text-base leading-relaxed text-gray-600">
-                For over 19 years, {schoolName} has been a beacon of holistic education.
-                We blend rigorous academics with rich co-curricular programs to nurture
-                confident, compassionate, and capable learners ready to thrive in a
-                fast-changing world.
+                {aboutPreview?.description ||
+                  `For over 19 years, ${schoolName} has been a beacon of holistic education. We blend rigorous academics with rich co-curricular programs to nurture confident, compassionate, and capable learners ready to thrive in a fast-changing world.`}
               </p>
               <ul className="mt-6 space-y-3">
-                {[
-                  'Student-centered, inquiry-based learning',
-                  'Highly qualified and caring educators',
-                  'Modern labs, library, and digital classrooms',
-                  'Strong emphasis on values and community service',
-                ].map((item) => (
+                {(aboutPreview?.features && Array.isArray(aboutPreview.features) &&
+                aboutPreview.features.length > 0
+                  ? aboutPreview.features.map((f: any) => f.value)
+                  : [
+                      'Student-centered, inquiry-based learning',
+                      'Highly qualified and caring educators',
+                      'Modern labs, library, and digital classrooms',
+                      'Strong emphasis on values and community service',
+                    ]
+                ).map((item: string) => (
                   <li key={item} className="flex items-start gap-3 text-gray-700">
                     <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-100 text-teal-700">
                       <ChevronRight className="h-3.5 w-3.5" />
@@ -282,7 +353,7 @@ export function HomePage() {
                 onClick={() => navigateToPublic('about')}
                 className="mt-7 bg-teal-600 text-white hover:bg-teal-700"
               >
-                Learn More About Us
+                {aboutPreview?.buttonText || 'Learn More About Us'}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </motion.div>
@@ -307,7 +378,7 @@ export function HomePage() {
           </motion.div>
 
           <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
-            {PROGRAMS.map((p, i) => {
+            {programs.map((p, i) => {
               const Icon = p.icon
               return (
                 <motion.div
@@ -365,10 +436,11 @@ export function HomePage() {
                 What&apos;s Happening
               </Badge>
               <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-                Upcoming events
+                {eventsSection?.title || 'Upcoming events'}
               </h2>
               <p className="mt-3 text-base text-gray-600">
-                Stay connected with the vibrant life of our school community.
+                {eventsSection?.subtitle ||
+                  'Stay connected with the vibrant life of our school community.'}
               </p>
             </div>
             <Button
@@ -376,7 +448,7 @@ export function HomePage() {
               onClick={() => navigateToPublic('contact')}
               className="border-teal-200 text-teal-700 hover:bg-teal-50 hover:text-teal-700"
             >
-              View Calendar
+              {eventsSection?.buttonText || 'View Calendar'}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </motion.div>
@@ -437,7 +509,7 @@ export function HomePage() {
               Campus Life
             </Badge>
             <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              Moments that make us proud
+              {gallerySection?.title || 'Moments that make us proud'}
             </h2>
             <p className="mt-4 text-base text-gray-600">
               A glimpse into the everyday joy, creativity, and achievement at our school.
@@ -494,7 +566,7 @@ export function HomePage() {
               onClick={() => navigateToPublic('media-photos')}
               className="border-teal-200 text-teal-700 hover:bg-teal-50 hover:text-teal-700"
             >
-              View Full Gallery
+              {gallerySection?.buttonText || 'View Full Gallery'}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
@@ -543,11 +615,11 @@ export function HomePage() {
                     Admissions 2025 - 2026
                   </Badge>
                   <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
-                    Begin your child&apos;s journey with us
+                    {cta?.title || "Begin your child's journey with us"}
                   </h2>
                   <p className="mt-4 text-base leading-relaxed text-teal-50">
-                    Join a community where every learner is known, valued, and inspired to
-                    reach their full potential. Applications are now open.
+                    {cta?.description ||
+                      'Join a community where every learner is known, valued, and inspired to reach their full potential. Applications are now open.'}
                   </p>
                 </div>
                 <div className="flex flex-col gap-3 sm:flex-row lg:justify-end">
@@ -556,7 +628,7 @@ export function HomePage() {
                     onClick={() => navigateToPublic('admission-portal')}
                     className="bg-white text-teal-700 hover:bg-teal-50 shadow-lg"
                   >
-                    Apply Online
+                    {cta?.primaryButtonText || 'Apply Online'}
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                   <Button
@@ -565,7 +637,7 @@ export function HomePage() {
                     onClick={() => navigateToPublic('contact')}
                     className="border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white"
                   >
-                    Schedule a Visit
+                    {cta?.secondaryButtonText || 'Schedule a Visit'}
                   </Button>
                 </div>
               </div>

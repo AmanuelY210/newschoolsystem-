@@ -1,0 +1,573 @@
+     1→     1→// CMS Page Data Schema Definitions
+     2→     2→// Defines all editable fields for each public website page
+     3→     3→
+     4→     4→export interface FieldDef {
+     5→     5→  key: string
+     6→     6→  label: string
+     7→     7→  type: 'text' | 'textarea' | 'image' | 'color' | 'list' | 'object'
+     8→     8→  placeholder?: string
+     9→     9→  // For list type: the item schema
+    10→    10→  itemFields?: FieldDef[]
+    11→    11→  // For object type: the sub-fields
+    12→    12→  fields?: FieldDef[]
+    13→    13→  // For list items: max count
+    14→    14→  maxItems?: number
+    15→    15→}
+    16→    16→
+    17→    17→export interface PageSchema {
+    18→    18→  slug: string
+    19→    19→  label: string
+    20→    20→  icon: string
+    21→    21→  description: string
+    22→    22→  sections: FieldDef[]
+    23→    23→}
+    24→    24→
+    25→    25→// Helper to create text field
+    26→    26→const text = (key: string, label: string, placeholder?: string): FieldDef => ({ key, label, type: 'text', placeholder })
+    27→    27→const textarea = (key: string, label: string, placeholder?: string): FieldDef => ({ key, label, type: 'textarea', placeholder })
+    28→    28→const image = (key: string, label: string): FieldDef => ({ key, label, type: 'image' })
+    29→    29→const color = (key: string, label: string): FieldDef => ({ key, label, type: 'color' })
+    30→    30→const list = (key: string, label: string, itemFields: FieldDef[], maxItems?: number): FieldDef => ({ key, label, type: 'list', itemFields, maxItems })
+    31→    31→const object = (key: string, label: string, fields: FieldDef[]): FieldDef => ({ key, label, type: 'object', fields })
+    32→    32→
+    33→    33→export const PAGE_SCHEMAS: PageSchema[] = [
+    34→    34→  // ============ HOME PAGE ============
+    35→    35→  {
+    36→    36→    slug: 'home',
+    37→    37→    label: 'Home Page',
+    38→    38→    icon: 'home',
+    39→    39→    description: 'Homepage hero, stats, programs, gallery, and CTA sections',
+    40→    40→    sections: [
+    41→    41→      object('hero', 'Hero Section', [
+    42→    42→        text('badge', 'Badge Text', 'Admissions Open for 2025 - 2026'),
+    43→    43→        text('title', 'Main Title', 'Welcome to Bright Future Academy'),
+    44→    44→        textarea('subtitle', 'Subtitle'),
+    45→    45→        image('image', 'Background Image'),
+    46→    46→        text('primaryCta', 'Primary Button Text', 'Apply Now'),
+    47→    47→        text('secondaryCta', 'Secondary Button Text', 'Explore Academy'),
+    48→    48→      ]),
+    49→    49→      list('stats', 'Statistics', [
+    50→    50→        text('value', 'Value', '2000+'),
+    51→    51→        text('label', 'Label', 'Students'),
+    52→    52→        text('icon', 'Icon (users/teachers/award/calendar)'),
+    53→    53→      ], 6),
+    54→    54→      object('aboutPreview', 'About Preview Section', [
+    55→    55→        text('badge', 'Badge', 'About Us'),
+    56→    56→        text('title', 'Title', 'A tradition of academic excellence and character'),
+    57→    57→        textarea('description', 'Description'),
+    58→    58→        image('image', 'Image'),
+    59→    59→        text('buttonText', 'Button Text', 'Learn More About Us'),
+    60→    60→        list('features', 'Feature Points', [text('value', 'Feature')], 6),
+    61→    61→      ]),
+    62→    62→      list('programs', 'Academic Programs', [
+    63→    63→        text('title', 'Title', 'Primary School'),
+    64→    64→        text('grades', 'Grades', 'Grades 1 - 6'),
+    65→    65→        textarea('description', 'Description'),
+    66→    66→        text('icon', 'Icon (bookopen/graduation/atom)'),
+    67→    67→      ], 4),
+    68→    68→      object('events', 'Events Section', [
+    69→    69→        text('title', 'Section Title', 'Upcoming events'),
+    70→    70→        text('subtitle', 'Subtitle', 'Mark your calendar'),
+    71→    71→        text('buttonText', 'Button Text', 'View Calendar'),
+    72→    72→      ]),
+    73→    73→      object('gallery', 'Gallery Section', [
+    74→    74→        text('title', 'Section Title', 'Moments that make us proud'),
+    75→    75→        text('buttonText', 'Button Text', 'View Full Gallery'),
+    76→    76→      ]),
+    77→    77→      object('cta', 'Call to Action Section', [
+    78→    78→        text('title', 'Title', 'Begin your child\'s journey with us'),
+    79→    79→        text('description', 'Description'),
+    80→    80→        text('primaryButtonText', 'Primary Button', 'Apply Online'),
+    81→    81→        text('secondaryButtonText', 'Secondary Button', 'Schedule a Visit'),
+    82→    82→      ]),
+    83→    83→    ],
+    84→    84→  },
+    85→    85→
+    86→    86→  // ============ ABOUT PAGE ============
+    87→    87→  {
+    88→    88→    slug: 'about',
+    89→    89→    label: 'About Us Page',
+    90→    90→    icon: 'info',
+    91→    91→    description: 'About page with story, mission/vision/values, timeline, leadership',
+    92→    92→    sections: [
+    93→    93→      object('hero', 'Hero Section', [
+    94→    94→        text('badge', 'Badge Text', 'About Us'),
+    95→    95→        text('title', 'Main Title', 'About Our School'),
+    96→    96→        textarea('subtitle', 'Subtitle'),
+    97→    97→        image('image', 'Background Image'),
+    98→    98→      ]),
+    99→    99→      object('story', 'Our Story Section', [
+   100→   100→        text('title', 'Section Title', 'Our Story'),
+   101→   101→        textarea('content', 'Content (paragraphs separated by blank lines)'),
+   102→   102→        image('image', 'Image'),
+   103→   103→      ]),
+   104→   104→      object('values', 'Mission, Vision & Values', [
+   105→   105→        text('title', 'Section Title', 'What Drives Us'),
+   106→   106→        text('subtitle', 'Subtitle', 'Mission, vision & values'),
+   107→   107→        list('items', 'Value Cards', [
+   108→   108→          text('title', 'Title', 'Our Mission'),
+   109→   109→          textarea('description', 'Description'),
+   110→   110→          text('icon', 'Icon (target/eye/heart)'),
+   111→   111→        ], 4),
+   112→   112→      ]),
+   113→   113→      list('timeline', 'Timeline', [
+   114→   114→        text('year', 'Year', '2005'),
+   115→   115→        text('title', 'Title', 'Founded'),
+   116→   116→        textarea('description', 'Description'),
+   117→   117→      ], 8),
+   118→   118→      object('leadership', 'Leadership Team', [
+   119→   119→        text('title', 'Section Title', 'Meet our leadership'),
+   120→   120→        text('subtitle', 'Subtitle'),
+   121→   121→        list('members', 'Team Members', [
+   122→   122→          text('name', 'Name'),
+   123→   123→          text('role', 'Role', 'Principal'),
+   124→   124→          textarea('bio', 'Bio'),
+   125→   125→          image('photo', 'Photo'),
+   126→   126→        ], 8),
+   127→   127→      ]),
+   128→   128→    ],
+   129→   129→  },
+   130→   130→
+   131→   131→  // ============ ACADEMY PAGE ============
+   132→   132→  {
+   133→   133→    slug: 'academy',
+   134→   134→    label: 'Academy Page',
+   135→   135→    icon: 'graduation',
+   136→   136→    description: 'Academic programs, subjects, calendar, and facilities',
+   137→   137→    sections: [
+   138→   138→      object('hero', 'Hero Section', [
+   139→   139→        text('badge', 'Badge Text', 'Academy'),
+   140→   140→        text('title', 'Main Title', 'Academic Programs'),
+   141→   141→        textarea('subtitle', 'Subtitle'),
+   142→   142→        image('image', 'Background Image'),
+   143→   143→      ]),
+   144→   144→      object('intro', 'Introduction', [
+   145→   145→        text('title', 'Section Title', 'Excellence in every classroom'),
+   146→   146→        textarea('content', 'Content'),
+   147→   147→      ]),
+   148→   148→      list('programs', 'Academic Programs', [
+   149→   149→        text('title', 'Title', 'Primary School'),
+   150→   150→        text('level', 'Level', 'Grades 1 - 6'),
+   151→   151→        textarea('description', 'Description'),
+   152→   152→        list('features', 'Features', [text('value', 'Feature')], 6),
+   153→   153→        text('icon', 'Icon'),
+   154→   154→      ], 4),
+   155→   155→      object('subjects', 'Subjects Section', [
+   156→   156→        text('title', 'Section Title', 'Subjects we teach'),
+   157→   157→        text('subtitle', 'Subtitle'),
+   158→   158→        list('items', 'Subjects', [
+   159→   159→          text('name', 'Subject Name', 'Mathematics'),
+   160→   160→          text('icon', 'Icon'),
+   161→   161→        ], 12),
+   162→   162→      ]),
+   163→   163→      object('calendar', 'Academic Calendar', [
+   164→   164→        text('title', 'Section Title', 'Academic Calendar'),
+   165→   165→        text('subtitle', 'Subtitle'),
+   166→   166→        list('items', 'Calendar Items', [
+   167→   167→          text('term', 'Term', 'Term 1'),
+   168→   168→          text('dates', 'Dates', 'September - December'),
+   169→   169→          text('color', 'Color'),
+   170→   170→        ], 4),
+   171→   171→      ]),
+   172→   172→      list('facilities', 'Facilities', [
+   173→   173→        text('title', 'Title', 'Library'),
+   174→   174→        textarea('description', 'Description'),
+   175→   175→        image('image', 'Image'),
+   176→   176→        text('icon', 'Icon'),
+   177→   177→      ], 8),
+   178→   178→    ],
+   179→   179→  },
+   180→   180→
+   181→   181→  // ============ TEACHERS PAGE ============
+   182→   182→  {
+   183→   183→    slug: 'teachers',
+   184→   184→    label: 'Teachers Page',
+   185→   185→    icon: 'users',
+   186→   186→    description: 'Teachers page hero and intro (teacher list comes from database)',
+   187→   187→    sections: [
+   188→   188→      object('hero', 'Hero Section', [
+   189→   189→        text('badge', 'Badge Text', 'Our Team'),
+   190→   190→        text('title', 'Main Title', 'Meet our dedicated teachers'),
+   191→   191→        textarea('subtitle', 'Subtitle'),
+   192→   192→        image('image', 'Background Image'),
+   193→   193→      ]),
+   194→   194→      object('intro', 'Introduction', [
+   195→   195→        text('title', 'Section Title', 'Educators who inspire'),
+   196→   196→        textarea('content', 'Content'),
+   197→   197→      ]),
+   198→   198→      object('stats', 'Teachers Stats', [
+   199→   199→        list('items', 'Stats', [
+   200→   200→          text('value', 'Value', '50+'),
+   201→   201→          text('label', 'Label', 'Expert Teachers'),
+   202→   202→        ], 4),
+   203→   203→      ]),
+   204→   204→    ],
+   205→   205→  },
+   206→   206→
+   207→   207→  // ============ STUDENTS PAGE ============
+   208→   208→  {
+   209→   209→    slug: 'students',
+   210→   210→    label: 'Students Page',
+   211→   211→    icon: 'student',
+   212→   212→    description: 'Students page with achievements, council, and activities',
+   213→   213→    sections: [
+   214→   214→      object('hero', 'Hero Section', [
+   215→   215→        text('badge', 'Badge Text', 'Student Life'),
+   216→   216→        text('title', 'Main Title', 'Our vibrant student community'),
+   217→   217→        textarea('subtitle', 'Subtitle'),
+   218→   218→        image('image', 'Background Image'),
+   219→   219→      ]),
+   220→   220→      object('achievements', 'Achievements Section', [
+   221→   221→        text('title', 'Section Title', 'Student Achievements'),
+   222→   222→        text('subtitle', 'Subtitle'),
+   223→   223→        list('items', 'Achievements', [
+   224→   224→          text('title', 'Title'),
+   225→   225→          text('value', 'Value/Count', '25+'),
+   226→   226→          textarea('description', 'Description'),
+   227→   227→          text('icon', 'Icon'),
+   228→   228→        ], 6),
+   229→   229→      ]),
+   230→   230→      object('council', 'Student Council', [
+   231→   231→        text('title', 'Section Title', 'Student Council'),
+   232→   232→        text('subtitle', 'Subtitle'),
+   233→   233→        list('members', 'Council Members', [
+   234→   234→          text('name', 'Name'),
+   235→   235→          text('role', 'Role', 'President'),
+   236→   236→          text('grade', 'Grade', 'Grade 12'),
+   237→   237→          image('photo', 'Photo'),
+   238→   238→        ], 10),
+   239→   239→      ]),
+   240→   240→      object('activities', 'Student Activities', [
+   241→   241→        text('title', 'Section Title', 'Clubs & Activities'),
+   242→   242→        text('subtitle', 'Subtitle'),
+   243→   243→        list('items', 'Activities', [
+   244→   244→          text('title', 'Title', 'Science Club'),
+   245→   245→          textarea('description', 'Description'),
+   246→   246→          text('icon', 'Icon'),
+   247→   247→        ], 8),
+   248→   248→      ]),
+   249→   249→    ],
+   250→   250→  },
+   251→   251→
+   252→   252→  // ============ CONTACT PAGE ============
+   253→   253→  {
+   254→   254→    slug: 'contact',
+   255→   255→    label: 'Contact Page',
+   256→   256→    icon: 'phone',
+   257→   257→    description: 'Contact page with info cards and map',
+   258→   258→    sections: [
+   259→   259→      object('hero', 'Hero Section', [
+   260→   260→        text('badge', 'Badge Text', 'Contact Us'),
+   261→   261→        text('title', 'Main Title', 'Get in touch with us'),
+   262→   262→        textarea('subtitle', 'Subtitle'),
+   263→   263→        image('image', 'Background Image'),
+   264→   264→      ]),
+   265→   265→      object('infoCards', 'Contact Info Cards', [
+   266→   266→        list('items', 'Info Cards', [
+   267→   267→          text('title', 'Title', 'Visit Us'),
+   268→   268→          text('value', 'Value', 'Bole Road, Addis Ababa'),
+   269→   269→          text('icon', 'Icon (map/phone/mail/clock)'),
+   270→   270→        ], 4),
+   271→   271→      ]),
+   272→   272→      object('form', 'Contact Form Section', [
+   273→   273→        text('title', 'Section Title', 'Send a Message'),
+   274→   274→        text('subtitle', 'Subtitle', 'We\'ll get back to you'),
+   275→   275→      ]),
+   276→   276→      object('map', 'Map Section', [
+   277→   277→        text('title', 'Section Title', 'Visit our campus'),
+   278→   278→        text('embedUrl', 'Map Embed URL (Google Maps iframe src)'),
+   279→   279→        text('address', 'Address Display'),
+   280→   280→      ]),
+   281→   281→      object('cta', 'Call to Action', [
+   282→   282→        text('title', 'Title', 'Ready to take the next step?'),
+   283→   283→        text('primaryButtonText', 'Primary Button', 'Apply Now'),
+   284→   284→        text('secondaryButtonText', 'Secondary Button', 'Learn More About Us'),
+   285→   285→      ]),
+   286→   286→    ],
+   287→   287→  },
+   288→   288→
+   289→   289→  // ============ MEDIA PAGE ============
+   290→   290→  {
+   291→   291→    slug: 'media',
+   292→   292→    label: 'Media Gallery Page',
+   293→   293→    icon: 'image',
+   294→   294→    description: 'Media gallery page hero and intro (photos/videos come from Media API)',
+   295→   295→    sections: [
+   296→   296→      object('hero', 'Hero Section', [
+   297→   297→        text('badge', 'Badge Text', 'Media Gallery'),
+   298→   298→        text('title', 'Main Title', 'Moments that make us proud'),
+   299→   299→        textarea('subtitle', 'Subtitle'),
+   300→   300→        image('image', 'Background Image'),
+   301→   301→      ]),
+   302→   302→      object('photoSection', 'Photo Gallery Section', [
+   303→   303→        text('title', 'Section Title', 'Photo Gallery'),
+   304→   304→        text('subtitle', 'Subtitle'),
+   305→   305→      ]),
+   306→   306→      object('videoSection', 'Video Gallery Section', [
+   307→   307→        text('title', 'Section Title', 'Video Gallery'),
+   308→   308→        text('subtitle', 'Subtitle'),
+   309→   309→      ]),
+   310→   310→    ],
+   311→   311→  },
+   312→   312→]
+   313→   313→
+   314→   314→// ============ DEFAULT DATA FOR EACH PAGE ============
+   315→   315→export const DEFAULT_PAGE_DATA: Record<string, any> = {
+   316→   316→  home: {
+   317→   317→    hero: {
+   318→   318→      badge: 'Admissions Open for 2025 - 2026',
+   319→   319→      title: 'Welcome to Bright Future Academy',
+   320→   320→      subtitle: 'Where excellence meets opportunity. We are committed to providing quality education that empowers students to become future leaders.',
+   321→   321→      image: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1920&q=70',
+   322→   322→      primaryCta: 'Apply Now',
+   323→   323→      secondaryCta: 'Explore Academy',
+   324→   324→    },
+   325→   325→    stats: [
+   326→   326→      { value: '2000+', label: 'Students', icon: 'users' },
+   327→   327→      { value: '50+', label: 'Expert Teachers', icon: 'teachers' },
+   328→   328→      { value: '19+', label: 'Years of Excellence', icon: 'award' },
+   329→   329→      { value: '25+', label: 'Awards Won', icon: 'calendar' },
+   330→   330→    ],
+   331→   331→    aboutPreview: {
+   332→   332→      badge: 'About Us',
+   333→   333→      title: 'A tradition of academic excellence and character',
+   334→   334→      description: 'For nearly two decades, Bright Future Academy has been at the forefront of quality education in Ethiopia. Our holistic approach nurtures intellectual curiosity, moral integrity, and a lifelong love of learning.',
+   335→   335→      image: 'https://images.unsplash.com/photo-1571260899304-425eee4c7efc?auto=format&fit=crop&w=1200&q=70',
+   336→   336→      buttonText: 'Learn More About Us',
+   337→   337→      features: [
+   338→   338→        { value: 'Holistic education approach' },
+   339→   339→        { value: 'Modern learning facilities' },
+   340→   340→        { value: 'Experienced & caring faculty' },
+   341→   341→        { value: 'Strong academic track record' },
+   342→   342→      ],
+   343→   343→    },
+   344→   344→    programs: [
+   345→   345→      { title: 'Primary School', grades: 'Grades 1 - 6', description: 'A nurturing foundation that builds curiosity, literacy, numeracy, and social skills.', icon: 'bookopen' },
+   346→   346→      { title: 'Junior School', grades: 'Grades 7 - 8', description: 'Bridging foundational learning with deeper subject mastery, critical thinking, and creativity.', icon: 'graduation' },
+   347→   347→      { title: 'Secondary School', grades: 'Grades 9 - 12', description: 'Rigorous academic preparation for university and beyond — with specialized tracks.', icon: 'atom' },
+   348→   348→    ],
+   349→   349→    events: {
+   350→   350→      title: 'Upcoming events',
+   351→   351→      subtitle: 'Mark your calendar',
+   352→   352→      buttonText: 'View Calendar',
+   353→   353→    },
+   354→   354→    gallery: {
+   355→   355→      title: 'Moments that make us proud',
+   356→   356→      buttonText: 'View Full Gallery',
+   357→   357→    },
+   358→   358→    cta: {
+   359→   359→      title: "Begin your child's journey with us",
+   360→   360→      description: 'Join a community where every child is known, valued, and inspired to achieve their personal best.',
+   361→   361→      primaryButtonText: 'Apply Online',
+   362→   362→      secondaryButtonText: 'Schedule a Visit',
+   363→   363→    },
+   364→   364→  },
+   365→   365→
+   366→   366→  about: {
+   367→   367→    hero: {
+   368→   368→      badge: 'About Us',
+   369→   369→      title: 'About Our School',
+   370→   370→      subtitle: 'Discover who we are, what we believe, and the people who make our school a special place to learn and grow.',
+   371→   371→      image: 'https://images.unsplash.com/photo-1571260899304-425eee4c7efc?auto=format&fit=crop&w=1920&q=70',
+   372→   372→    },
+   373→   373→    story: {
+   374→   374→      title: 'Our Story',
+   375→   375→      content: 'Bright Future Academy was founded in 2005 with a mission to provide world-class education in Ethiopia. Over the years, we have grown into one of the leading educational institutions in the country, serving over 2,000 students from diverse backgrounds.\n\nOur vision is to nurture responsible, knowledgeable, and skilled citizens who can contribute positively to society. We believe in holistic education that develops not just academic skills but also character, creativity, and critical thinking.',
+   376→   376→      image: 'https://images.unsplash.com/photo-1497486751825-1233686d5d80?auto=format&fit=crop&w=1200&q=70',
+   377→   377→    },
+   378→   378→    values: {
+   379→   379→      title: 'What Drives Us',
+   380→   380→      subtitle: 'Mission, vision & values',
+   381→   381→      description: 'The principles that shape every decision we make and every lesson we teach.',
+   382→   382→      items: [
+   383→   383→        { title: 'Our Mission', description: 'To provide a transformative education that develops knowledgeable, caring, and principled young people who are prepared to lead, serve, and contribute to a better world.', icon: 'target' },
+   384→   384→        { title: 'Our Vision', description: 'To be the leading educational institution in Ethiopia, recognized for academic excellence, innovative teaching, and graduates who shape a brighter future.', icon: 'eye' },
+   385→   385→        { title: 'Our Values', description: 'Integrity, excellence, respect, compassion, and innovation guide everything we do — from classroom interactions to community engagement.', icon: 'heart' },
+   386→   386→      ],
+   387→   387→    },
+   388→   388→    timeline: [
+   389→   389→      { year: '2005', title: 'Founded', description: 'Bright Future Academy opens its doors with 50 students and 5 teachers.' },
+   390→   390→      { year: '2010', title: 'Expansion', description: 'New secondary school building completed, enrollment reaches 500.' },
+   391→   391→      { year: '2015', title: 'Excellence Award', description: 'Recognized as one of the top 10 schools in Addis Ababa.' },
+   392→   392→      { year: '2020', title: 'Digital Transformation', description: 'Launched online learning platform and smart classrooms.' },
+   393→   393→      { year: '2024', title: '2,000+ Students', description: 'Today we serve over 2,000 students with 50+ expert teachers.' },
+   394→   394→    ],
+   395→   395→    leadership: {
+   396→   396→      title: 'Meet our leadership',
+   397→   397→      subtitle: 'Experienced educators dedicated to student success',
+   398→   398→      members: [
+   399→   399→        { name: 'Dr. Tadesse Bekele', role: 'Principal', bio: 'PhD in Education, 25 years of experience in educational leadership.', photo: '' },
+   400→   400→        { name: 'Mrs. Sara Mohammed', role: 'Vice Principal', bio: 'MA in Curriculum Development, 18 years of teaching experience.', photo: '' },
+   401→   401→        { name: 'Mr. Dawit Haile', role: 'Academic Dean', bio: 'MSc in Educational Administration, 15 years in academic planning.', photo: '' },
+   402→   402→      ],
+   403→   403→    },
+   404→   404→  },
+   405→   405→
+   406→   406→  academy: {
+   407→   407→    hero: {
+   408→   408→      badge: 'Academy',
+   409→   409→      title: 'Academic Programs',
+   410→   410→      subtitle: 'Comprehensive education from Grade 1 to Grade 12, designed to inspire, challenge, and prepare students for a bright future.',
+   411→   411→      image: 'https://images.unsplash.com/photo-1564981797816-1043664bf78d?auto=format&fit=crop&w=1920&q=70',
+   412→   412→    },
+   413→   413→    intro: {
+   414→   414→      title: 'Excellence in every classroom',
+   415→   415→      content: 'Our curriculum follows the national education framework while incorporating international best practices. We offer a balanced program that develops academic knowledge, practical skills, and character. Small class sizes ensure personalized attention, and our experienced teachers use modern, student-centered teaching methods.',
+   416→   416→    },
+   417→   417→    programs: [
+   418→   418→      { title: 'Primary School', level: 'Grades 1 - 6', description: 'Building strong foundations in literacy, numeracy, and social skills through engaging, play-based learning.', features: [{ value: 'Literacy & Language Arts' }, { value: 'Mathematics & Logic' }, { value: 'Science Discovery' }, { value: 'Social Studies' }, { value: 'Arts & Music' }, { value: 'Physical Education' }], icon: 'bookopen' },
+   419→   419→      { title: 'Junior School', level: 'Grades 7 - 8', description: 'Deepening subject knowledge while developing critical thinking, creativity, and independent study skills.', features: [{ value: 'Advanced Mathematics' }, { value: 'Sciences (Physics, Chemistry, Biology)' }, { value: 'Languages & Literature' }, { value: 'ICT & Digital Skills' }, { value: 'Civics & Ethics' }, { value: 'Creative Arts' }], icon: 'graduation' },
+   420→   420→      { title: 'Secondary School', level: 'Grades 9 - 12', description: 'University preparatory program with specialized Natural Science and Social Science tracks.', features: [{ value: 'University Preparation' }, { value: 'SAT & College Counseling' }, { value: 'Science Laboratory Work' }, { value: 'Research Projects' }, { value: 'Career Guidance' }, { value: 'Community Service' }], icon: 'atom' },
+   421→   421→    ],
+   422→   422→    subjects: {
+   423→   423→      title: 'Subjects we teach',
+   424→   424→      subtitle: 'A comprehensive curriculum',
+   425→   425→      items: [
+   426→   426→        { name: 'Mathematics', icon: 'calculator' },
+   427→   427→        { name: 'English', icon: 'book' },
+   428→   428→        { name: 'Amharic', icon: 'book' },
+   429→   429→        { name: 'Physics', icon: 'atom' },
+   430→   430→        { name: 'Chemistry', icon: 'flask' },
+   431→   431→        { name: 'Biology', icon: 'leaf' },
+   432→   432→        { name: 'History', icon: 'scroll' },
+   433→   433→        { name: 'Geography', icon: 'globe' },
+   434→   434→        { name: 'Civics', icon: 'scale' },
+   435→   435→        { name: 'ICT', icon: 'monitor' },
+   436→   436→      ],
+   437→   437→    },
+   438→   438→    calendar: {
+   439→   439→      title: 'Academic Calendar',
+   440→   440→      subtitle: 'Important dates throughout the year',
+   441→   441→      items: [
+   442→   442→        { term: 'Term 1', dates: 'September - December', color: '#0d9488' },
+   443→   443→        { term: 'Term 2', dates: 'January - April', color: '#0891b2' },
+   444→   444→        { term: 'Term 3', dates: 'May - July', color: '#059669' },
+   445→   445→        { term: 'Summer', dates: 'August', color: '#d97706' },
+   446→   446→      ],
+   447→   447→    },
+   448→   448→    facilities: [
+   449→   449→      { title: 'Modern Library', description: 'Over 10,000 books, digital resources, and quiet study areas.', image: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=800&q=70', icon: 'book' },
+   450→   450→      { title: 'Science Laboratories', description: 'Fully-equipped physics, chemistry, and biology labs.', image: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=70', icon: 'flask' },
+   451→   451→      { title: 'Sports Complex', description: 'Basketball, football, athletics, and indoor sports facilities.', image: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=800&q=70', icon: 'trophy' },
+   452→   452→      { title: 'Computer Lab', description: 'Modern computers with high-speed internet and latest software.', image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=800&q=70', icon: 'monitor' },
+   453→   453→    ],
+   454→   454→  },
+   455→   455→
+   456→   456→  teachers: {
+   457→   457→    hero: {
+   458→   458→      badge: 'Our Team',
+   459→   459→      title: 'Meet our dedicated teachers',
+   460→   460→      subtitle: 'Our experienced and passionate educators are the heart of Bright Future Academy.',
+   461→   461→      image: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=1920&q=70',
+   462→   462→    },
+   463→   463→    intro: {
+   464→   464→      title: 'Educators who inspire',
+   465→   465→      content: 'Our faculty brings together experienced educators from diverse backgrounds, all united by a shared passion for teaching and a commitment to student success. With small class sizes and a supportive environment, our teachers provide personalized attention to help every student thrive.',
+   466→   466→    },
+   467→   467→    stats: {
+   468→   468→      items: [
+   469→   469→        { value: '50+', label: 'Expert Teachers' },
+   470→   470→        { value: '15+', label: 'Average Years Experience' },
+   471→   471→        { value: '90%', label: 'Hold Advanced Degrees' },
+   472→   472→        { value: '1:15', label: 'Teacher-Student Ratio' },
+   473→   473→      ],
+   474→   474→    },
+   475→   475→  },
+   476→   476→
+   477→   477→  students: {
+   478→   478→    hero: {
+   479→   479→      badge: 'Student Life',
+   480→   480→      title: 'Our vibrant student community',
+   481→   481→      subtitle: 'Beyond academics, our students engage in sports, arts, leadership, and community service.',
+   482→   482→      image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1920&q=70',
+   483→   483→    },
+   484→   484→    achievements: {
+   485→   485→      title: 'Student Achievements',
+   486→   486→      subtitle: 'Celebrating excellence in academics, sports, and arts',
+   487→   487→      items: [
+   488→   488→        { title: 'Academic Awards', value: '25+', description: 'Regional and national academic competition winners', icon: 'award' },
+   489→   489→        { title: 'Sports Championships', value: '12+', description: 'Inter-school tournament victories', icon: 'trophy' },
+   490→   490→        { title: 'Science Fair Wins', value: '8+', description: 'Innovation and science exhibition awards', icon: 'flask' },
+   491→   491→        { title: 'University Placements', value: '95%', description: 'Graduates admitted to universities', icon: 'graduation' },
+   492→   492→      ],
+   493→   493→    },
+   494→   494→    council: {
+   495→   495→      title: 'Student Council',
+   496→   496→      subtitle: 'Student leaders representing their peers',
+   497→   497→      members: [
+   498→   498→        { name: 'Bethel Assefa', role: 'President', grade: 'Grade 12', photo: '' },
+   499→   499→        { name: 'Nahom Solomon', role: 'Vice President', grade: 'Grade 11', photo: '' },
+   500→   500→        { name: 'Ruth Girma', role: 'Secretary', grade: 'Grade 11', photo: '' },
+   501→   501→      ],
+   502→   502→    },
+   503→   503→    activities: {
+   504→   504→      title: 'Clubs & Activities',
+   505→   505→      subtitle: 'Something for every passion',
+   506→   506→      items: [
+   507→   507→        { title: 'Science Club', description: 'Hands-on experiments and science projects.', icon: 'flask' },
+   508→   508→        { title: 'Debate Society', description: 'Developing public speaking and critical thinking.', icon: 'message' },
+   509→   509→        { title: 'Drama Club', description: 'Theater productions and creative expression.', icon: 'drama' },
+   510→   510→        { title: 'Sports Teams', description: 'Football, basketball, athletics, and more.', icon: 'trophy' },
+   511→   511→        { title: 'Art Studio', description: 'Painting, sculpture, and digital art.', icon: 'palette' },
+   512→   512→        { title: 'Music Band', description: 'Instrumental and vocal performances.', icon: 'music' },
+   513→   513→      ],
+   514→   514→    },
+   515→   515→  },
+   516→   516→
+   517→   517→  contact: {
+   518→   518→    hero: {
+   519→   519→      badge: 'Contact Us',
+   520→   520→      title: 'Get in touch with us',
+   521→   521→      subtitle: "We'd love to hear from you. Whether you have a question about admissions, programs, or anything else, our team is ready to answer.",
+   522→   522→      image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1920&q=70',
+   523→   523→    },
+   524→   524→    infoCards: {
+   525→   525→      items: [
+   526→   526→        { title: 'Visit Us', value: 'Bole Road, Addis Ababa, Ethiopia', icon: 'map' },
+   527→   527→        { title: 'Call Us', value: '+251 11 234 5678', icon: 'phone' },
+   528→   528→        { title: 'Email Us', value: 'info@brightfuture.edu', icon: 'mail' },
+   529→   529→        { title: 'Office Hours', value: 'Mon - Fri: 8:00 AM - 4:00 PM', icon: 'clock' },
+   530→   530→      ],
+   531→   531→    },
+   532→   532→    form: {
+   533→   533→      title: 'Send a Message',
+   534→   534→      subtitle: "We'll get back to you",
+   535→   535→    },
+   536→   536→    map: {
+   537→   537→      title: 'Visit our campus',
+   538→   538→      embedUrl: 'https://www.openstreetmap.org/export/embed.html?bbox=38.7%2C8.97%2C38.82%2C9.08&layer=mapnik',
+   539→   539→      address: 'Bole Road, Addis Ababa, Ethiopia',
+   540→   540→    },
+   541→   541→    cta: {
+   542→   542→      title: 'Ready to take the next step?',
+   543→   543→      primaryButtonText: 'Apply Now',
+   544→   544→      secondaryButtonText: 'Learn More About Us',
+   545→   545→    },
+   546→   546→  },
+   547→   547→
+   548→   548→  media: {
+   549→   549→    hero: {
+   550→   550→      badge: 'Media Gallery',
+   551→   551→      title: 'Moments that make us proud',
+   552→   552→      subtitle: 'Explore photos and videos from our events, activities, and daily school life.',
+   553→   553→      image: 'https://images.unsplash.com/photo-1571260899304-425eee4c7efc?auto=format&fit=crop&w=1920&q=70',
+   554→   554→    },
+   555→   555→    photoSection: {
+   556→   556→      title: 'Photo Gallery',
+   557→   557→      subtitle: 'Capturing memorable moments',
+   558→   558→    },
+   559→   559→    videoSection: {
+   560→   560→      title: 'Video Gallery',
+   561→   561→      subtitle: 'Watch our stories come alive',
+   562→   562→    },
+   563→   563→  },
+   564→   564→}
+   565→   565→
+   566→   566→export function getPageSchema(slug: string): PageSchema | undefined {
+   567→   567→  return PAGE_SCHEMAS.find((s) => s.slug === slug)
+   568→   568→}
+   569→   569→
+   570→   570→export function getPageData(slug: string): any {
+   571→   571→  return DEFAULT_PAGE_DATA[slug] || {}
+   572→   572→}
+   573→   573→

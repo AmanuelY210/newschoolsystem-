@@ -28,34 +28,34 @@ interface CMSPage {
   published: boolean
 }
 
-const VALUES = [
+const DEFAULT_VALUES = [
   {
-    icon: Heart,
+    icon: 'heart',
     title: 'Integrity',
     description:
       'We act with honesty, fairness, and transparency in everything we do — modelling the ethics we hope to see in our students.',
   },
   {
-    icon: Sparkles,
+    icon: 'sparkles',
     title: 'Excellence',
     description:
       'We hold high expectations for ourselves and our learners, striving for continuous growth and outstanding achievement.',
   },
   {
-    icon: Users,
+    icon: 'users',
     title: 'Respect',
     description:
       'We celebrate diversity, listen with empathy, and treat every member of our community with dignity and care.',
   },
   {
-    icon: Award,
+    icon: 'award',
     title: 'Service',
     description:
       'We give our time and talents to uplift others — locally and globally — as engaged and compassionate citizens.',
   },
 ]
 
-const TIMELINE = [
+const DEFAULT_TIMELINE = [
   {
     year: '2005',
     title: 'Foundation',
@@ -88,32 +88,51 @@ const TIMELINE = [
   },
 ]
 
-const LEADERSHIP = [
+const DEFAULT_LEADERSHIP = [
   {
     name: 'Dr. Amanuel Bekele',
     role: 'Principal',
-    initials: 'AB',
     bio: 'Ph.D. in Educational Leadership, 20+ years of experience transforming schools.',
+    photo: '',
   },
   {
     name: 'Mrs. Sara Tilahun',
     role: 'Vice Principal, Academics',
-    initials: 'ST',
     bio: 'MA in Curriculum & Instruction, champion of inquiry-based learning.',
+    photo: '',
   },
   {
     name: 'Mr. Daniel Girma',
     role: 'Director of Student Affairs',
-    initials: 'DG',
     bio: 'Passionate about holistic development, wellness, and character education.',
+    photo: '',
   },
   {
     name: 'Mrs. Hana Tesfaye',
     role: 'Head of Primary School',
-    initials: 'HT',
     bio: 'Early-years specialist with a heart for nurturing young learners.',
+    photo: '',
   },
 ]
+
+function getValueIcon(name?: string) {
+  switch ((name || '').toLowerCase()) {
+    case 'target':
+      return Target
+    case 'eye':
+      return Eye
+    case 'heart':
+      return Heart
+    case 'sparkles':
+      return Sparkles
+    case 'users':
+      return Users
+    case 'award':
+      return Award
+    default:
+      return Heart
+  }
+}
 
 const fadeIn = {
   initial: { opacity: 0, y: 24 },
@@ -150,8 +169,15 @@ export function AboutPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  const title = page?.title || 'About Our School'
+  const cmsData = (page as any)?.data || null
+  const hero = cmsData?.hero || null
+  const story = cmsData?.story || null
+  const valuesSection = cmsData?.values || null
+  const leadershipSection = cmsData?.leadership || null
+
+  const title = hero?.title || page?.title || 'About Our School'
   const content =
+    story?.content ||
     page?.content ||
     `Bright Future Academy was founded in 2005 with a simple but powerful mission: to nurture well-rounded, compassionate, and capable young people who are ready to lead and serve.
 
@@ -160,8 +186,42 @@ Over the past two decades, we have grown into one of the most respected schools 
 We believe every student has unique gifts. Our role is to help them discover those gifts, develop them with confidence, and use them to make a positive difference in the world.`
 
   const banner =
+    hero?.image ||
     page?.bannerImage ||
     'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=1920&q=70'
+
+  const timeline =
+    cmsData?.timeline && Array.isArray(cmsData.timeline) && cmsData.timeline.length > 0
+      ? cmsData.timeline
+      : DEFAULT_TIMELINE
+
+  const values =
+    valuesSection?.items && Array.isArray(valuesSection.items) && valuesSection.items.length > 0
+      ? valuesSection.items.map((v: any) => ({
+          title: v.title || '',
+          description: v.description || '',
+          icon: getValueIcon(v.icon),
+        }))
+      : DEFAULT_VALUES.map((v) => ({ ...v, icon: getValueIcon(v.icon) }))
+
+  const leadership = (
+    leadershipSection?.members &&
+    Array.isArray(leadershipSection.members) &&
+    leadershipSection.members.length > 0
+      ? leadershipSection.members
+      : DEFAULT_LEADERSHIP
+  ).map((l: any) => ({
+    name: l.name || '',
+    role: l.role || '',
+    bio: l.bio || '',
+    photo: l.photo || '',
+    initials: (l.name || '')
+      .split(' ')
+      .map((p: string) => p[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase(),
+  }))
 
   return (
     <div className="bg-white">
@@ -180,12 +240,12 @@ We believe every student has unique gifts. Our role is to help them discover tho
             className="max-w-3xl"
           >
             <Badge className="mb-4 border-white/30 bg-white/10 text-white backdrop-blur-md hover:bg-white/15">
-              About Us
+              {hero?.badge || 'About Us'}
             </Badge>
             <h1 className="text-4xl font-extrabold text-white sm:text-5xl">{title}</h1>
             <p className="mt-5 max-w-2xl text-lg text-teal-50">
-              Discover who we are, what we believe, and the people who make our school a
-              special place to learn and grow.
+              {hero?.subtitle ||
+                'Discover who we are, what we believe, and the people who make our school a special place to learn and grow.'}
             </p>
           </motion.div>
         </div>
@@ -212,7 +272,7 @@ We believe every student has unique gifts. Our role is to help them discover tho
           ) : (
             <motion.div {...fadeIn}>
               <Badge className="mb-4 bg-teal-50 text-teal-700 hover:bg-teal-100">
-                Our Story
+                {story?.title || 'Our Story'}
               </Badge>
               {renderContent(content)}
             </motion.div>
@@ -225,13 +285,14 @@ We believe every student has unique gifts. Our role is to help them discover tho
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div {...fadeIn} className="mx-auto max-w-2xl text-center">
             <Badge className="mb-3 bg-teal-50 text-teal-700 hover:bg-teal-100">
-              What Drives Us
+              {valuesSection?.title || 'What Drives Us'}
             </Badge>
             <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              Mission, vision & values
+              {valuesSection?.subtitle || 'Mission, vision & values'}
             </h2>
             <p className="mt-3 text-base text-gray-600">
-              The principles that shape every decision we make and every lesson we teach.
+              {valuesSection?.description ||
+                'The principles that shape every decision we make and every lesson we teach.'}
             </p>
           </motion.div>
 
@@ -265,7 +326,7 @@ We believe every student has unique gifts. Our role is to help them discover tho
           </div>
 
           <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {VALUES.map((v, i) => {
+            {values.map((v, i) => {
               const Icon = v.icon
               return (
                 <motion.div
@@ -308,7 +369,7 @@ We believe every student has unique gifts. Our role is to help them discover tho
             {/* Vertical line */}
             <div className="absolute left-4 top-0 h-full w-px bg-gradient-to-b from-teal-300 via-teal-400 to-emerald-300 sm:left-1/2 sm:-translate-x-1/2" />
             <div className="space-y-8">
-              {TIMELINE.map((t, i) => (
+              {timeline.map((t, i) => (
                 <motion.div
                   key={t.year}
                   {...fadeIn}
@@ -346,15 +407,16 @@ We believe every student has unique gifts. Our role is to help them discover tho
               Our Team
             </Badge>
             <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              Meet our leadership
+              {leadershipSection?.title || 'Meet our leadership'}
             </h2>
             <p className="mt-3 text-base text-gray-600">
-              Experienced educators dedicated to your child&apos;s success.
+              {leadershipSection?.subtitle ||
+                'Experienced educators dedicated to your child\'s success.'}
             </p>
           </motion.div>
 
           <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {LEADERSHIP.map((l, i) => (
+            {leadership.map((l, i) => (
               <motion.div
                 key={l.name}
                 {...fadeIn}
@@ -362,12 +424,16 @@ We believe every student has unique gifts. Our role is to help them discover tho
               >
                 <Card className="group h-full overflow-hidden border-gray-100 p-6 text-center transition-all hover:-translate-y-1 hover:shadow-lg">
                   <Avatar className="mx-auto h-24 w-24 border-4 border-teal-100 transition-colors group-hover:border-teal-200">
-                    <AvatarImage
-                      src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
-                        l.name
-                      )}&backgroundColor=0d9488,10b981&textColor=ffffff`}
-                      alt={l.name}
-                    />
+                    {l.photo ? (
+                      <AvatarImage src={l.photo} alt={l.name} />
+                    ) : (
+                      <AvatarImage
+                        src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
+                          l.name
+                        )}&backgroundColor=0d9488,10b981&textColor=ffffff`}
+                        alt={l.name}
+                      />
+                    )}
                     <AvatarFallback className="bg-gradient-to-br from-teal-500 to-emerald-600 text-white text-xl font-bold">
                       {l.initials}
                     </AvatarFallback>

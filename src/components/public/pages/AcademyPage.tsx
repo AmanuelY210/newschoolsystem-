@@ -35,12 +35,12 @@ interface CMSPage {
   published: boolean
 }
 
-const PROGRAMS = [
+const DEFAULT_PROGRAMS = [
   {
     name: 'Primary School',
     grade: 'Grades 1 - 6',
     age: 'Ages 6 - 12',
-    icon: BookOpen,
+    icon: 'bookopen',
     color: 'from-teal-500 to-emerald-500',
     highlights: [
       'Literacy & Numeracy foundations',
@@ -54,7 +54,7 @@ const PROGRAMS = [
     name: 'Junior School',
     grade: 'Grades 7 - 8',
     age: 'Ages 12 - 14',
-    icon: FlaskConical,
+    icon: 'flask',
     color: 'from-emerald-500 to-teal-600',
     highlights: [
       'Integrated STEM curriculum',
@@ -68,7 +68,7 @@ const PROGRAMS = [
     name: 'Secondary School',
     grade: 'Grades 9 - 12',
     age: 'Ages 14 - 18',
-    icon: Microscope,
+    icon: 'microscope',
     color: 'from-teal-600 to-emerald-700',
     highlights: [
       'Natural Science & Social Science tracks',
@@ -80,33 +80,124 @@ const PROGRAMS = [
   },
 ]
 
-const SUBJECTS = [
-  { name: 'Mathematics', icon: Calculator },
-  { name: 'Sciences', icon: Beaker },
-  { name: 'English', icon: BookOpen },
-  { name: 'Social Studies', icon: Globe2 },
-  { name: 'Foreign Languages', icon: Languages },
-  { name: 'Computer Science', icon: Cpu },
-  { name: 'Visual Arts', icon: Palette },
-  { name: 'Music', icon: Music },
-  { name: 'Physical Education', icon: Dumbbell },
-  { name: 'Health & Wellness', icon: HeartPulse },
+const DEFAULT_SUBJECTS = [
+  { name: 'Mathematics', icon: 'calculator' },
+  { name: 'Sciences', icon: 'beaker' },
+  { name: 'English', icon: 'book' },
+  { name: 'Social Studies', icon: 'globe' },
+  { name: 'Foreign Languages', icon: 'languages' },
+  { name: 'Computer Science', icon: 'cpu' },
+  { name: 'Visual Arts', icon: 'palette' },
+  { name: 'Music', icon: 'music' },
+  { name: 'Physical Education', icon: 'dumbbell' },
+  { name: 'Health & Wellness', icon: 'health' },
 ]
 
-const CALENDAR = [
+const DEFAULT_CALENDAR = [
   { term: 'Term 1', period: 'September - December', highlight: 'Opening & Mid-term exams' },
   { term: 'Term 2', period: 'January - April', highlight: 'Science fair & Sports day' },
   { term: 'Term 3', period: 'May - July', highlight: 'Final exams & Graduation' },
 ]
 
-const FACILITIES = [
-  { name: 'Science Laboratories', icon: FlaskConical, desc: 'Three dedicated labs for Physics, Chemistry, and Biology with modern equipment.' },
-  { name: 'Computer Lab', icon: Computer, desc: '40-workstation lab with high-speed internet and latest software.' },
-  { name: 'Library', icon: Library, desc: 'Over 15,000 books, digital resources, and quiet study spaces.' },
-  { name: 'Sports Complex', icon: Dumbbell, desc: 'Indoor courts, football pitch, athletics track, and fitness studio.' },
-  { name: 'Arts Studio', icon: Palette, desc: 'Dedicated spaces for painting, sculpture, music, and drama.' },
-  { name: 'STEM Center', icon: Cpu, desc: 'Robotics, 3D printing, and design-thinking workshop.' },
+const DEFAULT_FACILITIES = [
+  { name: 'Science Laboratories', icon: 'flask', desc: 'Three dedicated labs for Physics, Chemistry, and Biology with modern equipment.' },
+  { name: 'Computer Lab', icon: 'monitor', desc: '40-workstation lab with high-speed internet and latest software.' },
+  { name: 'Library', icon: 'library', desc: 'Over 15,000 books, digital resources, and quiet study spaces.' },
+  { name: 'Sports Complex', icon: 'sports', desc: 'Indoor courts, football pitch, athletics track, and fitness studio.' },
+  { name: 'Arts Studio', icon: 'palette', desc: 'Dedicated spaces for painting, sculpture, music, and drama.' },
+  { name: 'STEM Center', icon: 'cpu', desc: 'Robotics, 3D printing, and design-thinking workshop.' },
 ]
+
+function getProgramIcon(name?: string) {
+  switch ((name || '').toLowerCase()) {
+    case 'bookopen':
+    case 'book':
+      return BookOpen
+    case 'graduation':
+    case 'graduationcap':
+      return GraduationCap
+    case 'atom':
+    case 'microscope':
+      return Microscope
+    case 'flask':
+    case 'flaskconical':
+      return FlaskConical
+    default:
+      return BookOpen
+  }
+}
+
+function getSubjectIcon(name?: string) {
+  switch ((name || '').toLowerCase()) {
+    case 'calculator':
+      return Calculator
+    case 'book':
+    case 'bookopen':
+      return BookOpen
+    case 'atom':
+    case 'microscope':
+    case 'physics':
+      return Microscope
+    case 'flask':
+    case 'beaker':
+    case 'chemistry':
+      return Beaker
+    case 'globe':
+    case 'globe2':
+    case 'geography':
+      return Globe2
+    case 'palette':
+    case 'arts':
+      return Palette
+    case 'music':
+      return Music
+    case 'languages':
+    case 'language':
+      return Languages
+    case 'cpu':
+    case 'computer':
+    case 'monitor':
+    case 'ict':
+      return Cpu
+    case 'dumbbell':
+    case 'sports':
+      return Dumbbell
+    case 'heart':
+    case 'health':
+    case 'heartpulse':
+      return HeartPulse
+    case 'library':
+      return Library
+    default:
+      return BookOpen
+  }
+}
+
+function getFacilityIcon(name?: string) {
+  switch ((name || '').toLowerCase()) {
+    case 'book':
+    case 'library':
+      return Library
+    case 'flask':
+    case 'beaker':
+    case 'science':
+      return FlaskConical
+    case 'computer':
+    case 'monitor':
+    case 'cpu':
+      return Computer
+    case 'dumbbell':
+    case 'sports':
+      return Dumbbell
+    case 'palette':
+    case 'arts':
+      return Palette
+    case 'stem':
+      return Cpu
+    default:
+      return Library
+  }
+}
 
 const fadeIn = {
   initial: { opacity: 0, y: 24 },
@@ -142,8 +233,15 @@ export function AcademyPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  const title = page?.title || 'Academy & Curriculum'
+  const cmsData = (page as any)?.data || null
+  const hero = cmsData?.hero || null
+  const intro = cmsData?.intro || null
+  const subjectsSection = cmsData?.subjects || null
+  const calendarSection = cmsData?.calendar || null
+
+  const title = hero?.title || page?.title || 'Academy & Curriculum'
   const content =
+    intro?.content ||
     page?.content ||
     `At Bright Future Academy, our curriculum is designed to develop the whole child — academically, socially, emotionally, and physically.
 
@@ -151,8 +249,58 @@ We follow a rigorous academic framework aligned with national standards, enriche
 
 From early literacy to advanced sciences, every subject is taught by specialists who are passionate about their fields and skilled at inspiring young minds.`
   const banner =
+    hero?.image ||
     page?.bannerImage ||
     'https://images.unsplash.com/photo-1497486751825-1233686d5d80?auto=format&fit=crop&w=1920&q=70'
+
+  const programs = (
+    cmsData?.programs && Array.isArray(cmsData.programs) && cmsData.programs.length > 0
+      ? cmsData.programs
+      : DEFAULT_PROGRAMS
+  ).map((p: any, i: number) => {
+    const fallback = DEFAULT_PROGRAMS[i % DEFAULT_PROGRAMS.length]
+    return {
+      name: p.title || fallback.name,
+      grade: p.level || fallback.grade,
+      age: fallback.age,
+      icon: getProgramIcon(p.icon) || getProgramIcon(fallback.icon),
+      color: fallback.color,
+      highlights:
+        p.features && Array.isArray(p.features) && p.features.length > 0
+          ? p.features.map((f: any) => f.value).filter(Boolean)
+          : fallback.highlights,
+    }
+  })
+
+  const subjects =
+    subjectsSection?.items && Array.isArray(subjectsSection.items) && subjectsSection.items.length > 0
+      ? subjectsSection.items.map((s: any) => ({
+          name: s.name || '',
+          icon: getSubjectIcon(s.icon),
+        }))
+      : DEFAULT_SUBJECTS.map((s) => ({ ...s, icon: getSubjectIcon(s.icon) }))
+
+  const calendar =
+    calendarSection?.items && Array.isArray(calendarSection.items) && calendarSection.items.length > 0
+      ? calendarSection.items.map((c: any, i: number) => ({
+          term: c.term || '',
+          period: c.dates || '',
+          highlight: c.highlight || DEFAULT_CALENDAR[i % DEFAULT_CALENDAR.length]?.highlight || '',
+        }))
+      : DEFAULT_CALENDAR
+
+  const facilities = (
+    cmsData?.facilities && Array.isArray(cmsData.facilities) && cmsData.facilities.length > 0
+      ? cmsData.facilities
+      : DEFAULT_FACILITIES
+  ).map((f: any, i: number) => {
+    const fallback = DEFAULT_FACILITIES[i % DEFAULT_FACILITIES.length]
+    return {
+      name: f.title || fallback.name,
+      desc: f.description || fallback.desc,
+      icon: getFacilityIcon(f.icon) || getFacilityIcon(fallback.icon),
+    }
+  })
 
   return (
     <div className="bg-white">
@@ -171,11 +319,12 @@ From early literacy to advanced sciences, every subject is taught by specialists
             className="max-w-3xl"
           >
             <Badge className="mb-4 border-white/30 bg-white/10 text-white backdrop-blur-md hover:bg-white/15">
-              Academy
+              {hero?.badge || 'Academy'}
             </Badge>
             <h1 className="text-4xl font-extrabold text-white sm:text-5xl">{title}</h1>
             <p className="mt-5 max-w-2xl text-lg text-teal-50">
-              A challenging, supportive, and inspiring academic program for every learner.
+              {hero?.subtitle ||
+                'A challenging, supportive, and inspiring academic program for every learner.'}
             </p>
           </motion.div>
         </div>
@@ -202,7 +351,7 @@ From early literacy to advanced sciences, every subject is taught by specialists
           ) : (
             <motion.div {...fadeIn}>
               <Badge className="mb-4 bg-teal-50 text-teal-700 hover:bg-teal-100">
-                Our Approach
+                {intro?.title || 'Our Approach'}
               </Badge>
               {renderContent(content)}
             </motion.div>
@@ -226,7 +375,7 @@ From early literacy to advanced sciences, every subject is taught by specialists
           </motion.div>
 
           <div className="mt-12 grid grid-cols-1 gap-6 lg:grid-cols-3">
-            {PROGRAMS.map((p, i) => {
+            {programs.map((p, i) => {
               const Icon = p.icon
               return (
                 <motion.div
@@ -272,15 +421,16 @@ From early literacy to advanced sciences, every subject is taught by specialists
               Curriculum
             </Badge>
             <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              Subjects we offer
+              {subjectsSection?.title || 'Subjects we offer'}
             </h2>
             <p className="mt-3 text-base text-gray-600">
-              A balanced, broad curriculum that develops well-rounded learners.
+              {subjectsSection?.subtitle ||
+                'A balanced, broad curriculum that develops well-rounded learners.'}
             </p>
           </motion.div>
 
           <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-            {SUBJECTS.map((s, i) => {
+            {subjects.map((s, i) => {
               const Icon = s.icon
               return (
                 <motion.div
@@ -309,15 +459,16 @@ From early literacy to advanced sciences, every subject is taught by specialists
               Academic Year
             </Badge>
             <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              Calendar highlights
+              {calendarSection?.title || 'Calendar highlights'}
             </h2>
             <p className="mt-3 text-base text-gray-600">
-              Three terms, each with its own rhythm of learning and celebration.
+              {calendarSection?.subtitle ||
+                'Three terms, each with its own rhythm of learning and celebration.'}
             </p>
           </motion.div>
 
           <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
-            {CALENDAR.map((c, i) => (
+            {calendar.map((c, i) => (
               <motion.div
                 key={c.term}
                 {...fadeIn}
@@ -357,7 +508,7 @@ From early literacy to advanced sciences, every subject is taught by specialists
           </motion.div>
 
           <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {FACILITIES.map((f, i) => {
+            {facilities.map((f, i) => {
               const Icon = f.icon
               return (
                 <motion.div

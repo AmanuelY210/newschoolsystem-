@@ -32,30 +32,30 @@ interface ApiResponse<T> {
   students?: T[]
 }
 
-const ACHIEVEMENTS = [
+const DEFAULT_ACHIEVEMENTS = [
   {
-    icon: Trophy,
+    icon: 'trophy',
     title: 'National Science Olympiad',
     year: '2024',
     description: 'Three students placed in the top 10 nationally, with a gold medal in Chemistry.',
     color: 'from-amber-500 to-orange-600',
   },
   {
-    icon: Crown,
+    icon: 'crown',
     title: 'Regional Debate Championship',
     year: '2024',
     description: 'Our debate team won the regional championship for the second consecutive year.',
     color: 'from-teal-500 to-emerald-600',
   },
   {
-    icon: Palette,
+    icon: 'palette',
     title: 'Youth Art Exhibition',
     year: '2023',
     description: 'Five students\' works were selected for the National Youth Art Exhibition.',
     color: 'from-rose-500 to-pink-600',
   },
   {
-    icon: Dumbbell,
+    icon: 'dumbbell',
     title: 'Inter-School Athletics',
     year: '2024',
     description: 'Overall champions in the inter-school athletics meet with 12 medals.',
@@ -63,13 +63,13 @@ const ACHIEVEMENTS = [
   },
 ]
 
-const STUDENT_COUNCIL = [
-  { role: 'President', name: 'Haben T.', grade: 'Grade 12', initials: 'HT' },
-  { role: 'Vice President', name: 'Naod A.', grade: 'Grade 11', initials: 'NA' },
-  { role: 'Secretary', name: 'Lily M.', grade: 'Grade 11', initials: 'LM' },
-  { role: 'Treasurer', name: 'Yonas D.', grade: 'Grade 10', initials: 'YD' },
-  { role: 'Communications', name: 'Eden G.', grade: 'Grade 10', initials: 'EG' },
-  { role: 'Activities', name: 'Sami K.', grade: 'Grade 9', initials: 'SK' },
+const DEFAULT_STUDENT_COUNCIL = [
+  { role: 'President', name: 'Haben T.', grade: 'Grade 12', initials: 'HT', photo: '' },
+  { role: 'Vice President', name: 'Naod A.', grade: 'Grade 11', initials: 'NA', photo: '' },
+  { role: 'Secretary', name: 'Lily M.', grade: 'Grade 11', initials: 'LM', photo: '' },
+  { role: 'Treasurer', name: 'Yonas D.', grade: 'Grade 10', initials: 'YD', photo: '' },
+  { role: 'Communications', name: 'Eden G.', grade: 'Grade 10', initials: 'EG', photo: '' },
+  { role: 'Activities', name: 'Sami K.', grade: 'Grade 9', initials: 'SK', photo: '' },
 ]
 
 const GRADE_LEVELS = [
@@ -96,15 +96,15 @@ const GRADE_LEVELS = [
   },
 ]
 
-const ACTIVITIES = [
-  { icon: Microscope, name: 'Science Club' },
-  { icon: Palette, name: 'Art Studio' },
-  { icon: Music, name: 'Music & Band' },
-  { icon: Dumbbell, name: 'Sports Teams' },
-  { icon: Globe2, name: 'Debate Society' },
-  { icon: TreePine, name: 'Environment Club' },
-  { icon: Heart, name: 'Community Service' },
-  { icon: Megaphone, name: 'Student Council' },
+const DEFAULT_ACTIVITIES = [
+  { icon: 'microscope', name: 'Science Club' },
+  { icon: 'palette', name: 'Art Studio' },
+  { icon: 'music', name: 'Music & Band' },
+  { icon: 'dumbbell', name: 'Sports Teams' },
+  { icon: 'globe', name: 'Debate Society' },
+  { icon: 'tree', name: 'Environment Club' },
+  { icon: 'heart', name: 'Community Service' },
+  { icon: 'megaphone', name: 'Student Council' },
 ]
 
 const TOP_PERFORMERS = [
@@ -113,6 +113,71 @@ const TOP_PERFORMERS = [
   { name: 'Kalkidan W.', achievement: 'Best Speaker — National Debate', year: '2024' },
   { name: 'Robel A.', achievement: 'Gold — National Robotics Contest', year: '2023' },
 ]
+
+function getAchievementIcon(name?: string) {
+  switch ((name || '').toLowerCase()) {
+    case 'award':
+      return Award
+    case 'trophy':
+      return Trophy
+    case 'flask':
+    case 'microscope':
+      return Microscope
+    case 'graduation':
+    case 'graduationcap':
+      return GraduationCap
+    case 'crown':
+      return Crown
+    case 'palette':
+    case 'arts':
+      return Palette
+    case 'dumbbell':
+    case 'sports':
+      return Dumbbell
+    case 'star':
+      return Star
+    default:
+      return Trophy
+  }
+}
+
+function getActivityIcon(name?: string) {
+  switch ((name || '').toLowerCase()) {
+    case 'microscope':
+    case 'flask':
+    case 'science':
+      return Microscope
+    case 'palette':
+    case 'arts':
+      return Palette
+    case 'music':
+      return Music
+    case 'dumbbell':
+    case 'sports':
+      return Dumbbell
+    case 'globe':
+    case 'globe2':
+    case 'debate':
+      return Globe2
+    case 'tree':
+    case 'treePine':
+    case 'environment':
+      return TreePine
+    case 'heart':
+    case 'community':
+      return Heart
+    case 'megaphone':
+    case 'council':
+      return Megaphone
+    case 'book':
+    case 'bookopen':
+      return BookOpen
+    case 'sparkles':
+      return Sparkles
+    default:
+      return Sparkles
+  }
+}
 
 const fadeIn = {
   initial: { opacity: 0, y: 24 },
@@ -125,6 +190,7 @@ export function StudentsPage() {
   const { navigateToPublic } = useAppStore()
   const [studentCount, setStudentCount] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
+  const [cmsData, setCmsData] = useState<any>(null)
 
   useEffect(() => {
     // Attempt to fetch student count. The endpoint requires auth, so anonymous
@@ -137,7 +203,63 @@ export function StudentsPage() {
       })
       .catch(() => setStudentCount(null))
       .finally(() => setLoading(false))
+    fetch('/api/cms/students')
+      .then((r) => r.json())
+      .then((data) => setCmsData(data.page?.data || null))
+      .catch(() => setCmsData(null))
   }, [])
+
+  const hero = cmsData?.hero || null
+  const achievementsSection = cmsData?.achievements || null
+  const councilSection = cmsData?.council || null
+  const activitiesSection = cmsData?.activities || null
+
+  const achievements = (
+    achievementsSection?.items &&
+    Array.isArray(achievementsSection.items) &&
+    achievementsSection.items.length > 0
+      ? achievementsSection.items
+      : DEFAULT_ACHIEVEMENTS
+  ).map((a: any, i: number) => {
+    const fallback = DEFAULT_ACHIEVEMENTS[i % DEFAULT_ACHIEVEMENTS.length]
+    return {
+      icon: getAchievementIcon(a.icon) || getAchievementIcon(fallback.icon),
+      title: a.title || fallback.title,
+      year: a.value || a.year || fallback.year,
+      description: a.description || fallback.description,
+      color: a.color || fallback.color,
+    }
+  })
+
+  const studentCouncil = (
+    councilSection?.members &&
+    Array.isArray(councilSection.members) &&
+    councilSection.members.length > 0
+      ? councilSection.members
+      : DEFAULT_STUDENT_COUNCIL
+  ).map((s: any) => ({
+    role: s.role || '',
+    name: s.name || '',
+    grade: s.grade || '',
+    photo: s.photo || '',
+    initials: (s.name || '')
+      .split(' ')
+      .map((p: string) => p[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase(),
+  }))
+
+  const activities = (
+    activitiesSection?.items &&
+    Array.isArray(activitiesSection.items) &&
+    activitiesSection.items.length > 0
+      ? activitiesSection.items
+      : DEFAULT_ACTIVITIES
+  ).map((a: any) => ({
+    icon: getActivityIcon(a.icon),
+    name: a.title || a.name || '',
+  }))
 
   return (
     <div className="bg-white">
@@ -146,8 +268,7 @@ export function StudentsPage() {
         <div
           className="absolute inset-0 opacity-20 bg-cover bg-center"
           style={{
-            backgroundImage:
-              'url(https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1920&q=70)',
+            backgroundImage: `url(${hero?.image || 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1920&q=70'})`,
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-br from-teal-900/60 to-emerald-900/60" />
@@ -160,14 +281,14 @@ export function StudentsPage() {
           >
             <Badge className="mb-4 border-white/30 bg-white/10 text-white backdrop-blur-md hover:bg-white/15">
               <Users className="mr-1.5 h-3.5 w-3.5" />
-              Student Life
+              {hero?.badge || 'Student Life'}
             </Badge>
             <h1 className="text-4xl font-extrabold text-white sm:text-5xl">
-              Our students shine
+              {hero?.title || 'Our students shine'}
             </h1>
             <p className="mt-5 max-w-2xl text-lg text-teal-50">
-              Celebrating the achievements, leadership, and vibrant community life of our
-              students — while respecting every family&apos;s privacy.
+              {hero?.subtitle ||
+                'Celebrating the achievements, leadership, and vibrant community life of our students — while respecting every family\'s privacy.'}
             </p>
           </motion.div>
         </div>
@@ -223,15 +344,16 @@ export function StudentsPage() {
               Hall of Excellence
             </Badge>
             <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              Student achievements
+              {achievementsSection?.title || 'Student achievements'}
             </h2>
             <p className="mt-3 text-base text-gray-600">
-              We celebrate the wins — big and small — of our incredible students.
+              {achievementsSection?.subtitle ||
+                'We celebrate the wins — big and small — of our incredible students.'}
             </p>
           </motion.div>
 
           <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2">
-            {ACHIEVEMENTS.map((a, i) => {
+            {achievements.map((a, i) => {
               const Icon = a.icon
               return (
                 <motion.div
@@ -313,15 +435,16 @@ export function StudentsPage() {
               Student Leadership
             </Badge>
             <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              Student Council
+              {councilSection?.title || 'Student Council'}
             </h2>
             <p className="mt-3 text-base text-gray-600">
-              Elected by their peers to represent student voice and lead campus initiatives.
+              {councilSection?.subtitle ||
+                'Elected by their peers to represent student voice and lead campus initiatives.'}
             </p>
           </motion.div>
 
           <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-            {STUDENT_COUNCIL.map((s, i) => (
+            {studentCouncil.map((s, i) => (
               <motion.div
                 key={s.role}
                 {...fadeIn}
@@ -329,12 +452,16 @@ export function StudentsPage() {
               >
                 <Card className="h-full border-gray-100 p-5 text-center transition-all hover:-translate-y-1 hover:shadow-md">
                   <Avatar className="mx-auto h-16 w-16 border-2 border-teal-100">
-                    <AvatarImage
-                      src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
-                        s.name
-                      )}&backgroundColor=0d9488,10b981&textColor=ffffff`}
-                      alt={s.name}
-                    />
+                    {s.photo ? (
+                      <AvatarImage src={s.photo} alt={s.name} />
+                    ) : (
+                      <AvatarImage
+                        src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
+                          s.name
+                        )}&backgroundColor=0d9488,10b981&textColor=ffffff`}
+                        alt={s.name}
+                      />
+                    )}
                     <AvatarFallback className="bg-gradient-to-br from-teal-500 to-emerald-600 text-white text-lg font-bold">
                       {s.initials}
                     </AvatarFallback>
@@ -400,16 +527,16 @@ export function StudentsPage() {
               Beyond the Classroom
             </Badge>
             <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              Student activities
+              {activitiesSection?.title || 'Student activities'}
             </h2>
             <p className="mt-3 text-base text-gray-600">
-              Dozens of clubs, teams, and service groups where students discover and pursue
-              their passions.
+              {activitiesSection?.subtitle ||
+                'Dozens of clubs, teams, and service groups where students discover and pursue their passions.'}
             </p>
           </motion.div>
 
           <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {ACTIVITIES.map((a, i) => {
+            {activities.map((a, i) => {
               const Icon = a.icon
               return (
                 <motion.div

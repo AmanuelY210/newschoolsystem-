@@ -70,11 +70,21 @@ export function ContactPage() {
       .catch(() => {})
   }, [])
 
-  const title = page?.title || 'Contact Us'
-  const address = settings.school_address || CONTACT_INFO_FALLBACK.address
-  const phone = settings.school_phone || CONTACT_INFO_FALLBACK.phone
-  const email = settings.school_email || CONTACT_INFO_FALLBACK.email
-  const hours = settings.school_hours || CONTACT_INFO_FALLBACK.hours
+  const cmsData = (page as any)?.data || null
+  const hero = cmsData?.hero || null
+  const formSection = cmsData?.form || null
+  const mapSection = cmsData?.map || null
+  const cta = cmsData?.cta || null
+  const cmsInfoItems =
+    cmsData?.infoCards?.items && Array.isArray(cmsData.infoCards.items)
+      ? cmsData.infoCards.items
+      : []
+
+  const title = hero?.title || page?.title || 'Contact Us'
+  const address = settings.school_address || cmsInfoItems[0]?.value || CONTACT_INFO_FALLBACK.address
+  const phone = settings.school_phone || cmsInfoItems[1]?.value || CONTACT_INFO_FALLBACK.phone
+  const email = settings.school_email || cmsInfoItems[2]?.value || CONTACT_INFO_FALLBACK.email
+  const hours = settings.school_hours || cmsInfoItems[3]?.value || CONTACT_INFO_FALLBACK.hours
 
   const update = (k: keyof typeof form, v: string) => setForm((p) => ({ ...p, [k]: v }))
 
@@ -116,29 +126,29 @@ export function ContactPage() {
   const INFO_CARDS = [
     {
       icon: MapPin,
-      label: 'Visit Us',
-      value: address,
+      label: cmsInfoItems[0]?.title || 'Visit Us',
+      value: cmsInfoItems[0]?.value || address,
       action: { label: 'Get Directions', href: '#map' },
       color: 'from-teal-500 to-emerald-500',
     },
     {
       icon: Phone,
-      label: 'Call Us',
-      value: phone,
-      action: { label: 'Call now', href: `tel:${phone}` },
+      label: cmsInfoItems[1]?.title || 'Call Us',
+      value: cmsInfoItems[1]?.value || phone,
+      action: { label: 'Call now', href: `tel:${cmsInfoItems[1]?.value || phone}` },
       color: 'from-emerald-500 to-teal-600',
     },
     {
       icon: Mail,
-      label: 'Email Us',
-      value: email,
-      action: { label: 'Send email', href: `mailto:${email}` },
+      label: cmsInfoItems[2]?.title || 'Email Us',
+      value: cmsInfoItems[2]?.value || email,
+      action: { label: 'Send email', href: `mailto:${cmsInfoItems[2]?.value || email}` },
       color: 'from-teal-600 to-emerald-700',
     },
     {
       icon: Clock,
-      label: 'Office Hours',
-      value: hours,
+      label: cmsInfoItems[3]?.title || 'Office Hours',
+      value: cmsInfoItems[3]?.value || hours,
       color: 'from-emerald-600 to-teal-700',
     },
   ]
@@ -150,8 +160,7 @@ export function ContactPage() {
         <div
           className="absolute inset-0 opacity-20 bg-cover bg-center"
           style={{
-            backgroundImage:
-              'url(https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1920&q=70)',
+            backgroundImage: `url(${hero?.image || 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1920&q=70'})`,
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-br from-teal-900/60 to-emerald-900/60" />
@@ -164,12 +173,12 @@ export function ContactPage() {
           >
             <Badge className="mb-4 border-white/30 bg-white/10 text-white backdrop-blur-md hover:bg-white/15">
               <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
-              Get in Touch
+              {hero?.badge || 'Get in Touch'}
             </Badge>
             <h1 className="text-4xl font-extrabold text-white sm:text-5xl">{title}</h1>
             <p className="mt-5 max-w-2xl text-lg text-teal-50">
-              We&apos;d love to hear from you. Whether you have a question about admissions,
-              programs, or just want to visit — our team is ready to help.
+              {hero?.subtitle ||
+                'We\'d love to hear from you. Whether you have a question about admissions, programs, or just want to visit — our team is ready to help.'}
             </p>
           </motion.div>
         </div>
@@ -232,9 +241,11 @@ export function ContactPage() {
             {/* FORM */}
             <motion.div {...fadeIn}>
               <Badge className="mb-3 bg-teal-50 text-teal-700 hover:bg-teal-100">
-                Send a Message
+                {formSection?.title || 'Send a Message'}
               </Badge>
-              <h2 className="text-3xl font-bold text-gray-900">We&apos;ll get back to you</h2>
+              <h2 className="text-3xl font-bold text-gray-900">
+                {formSection?.subtitle || 'We\'ll get back to you'}
+              </h2>
               <p className="mt-3 text-base text-gray-600">
                 Fill in the form and our team will respond within 1-2 business days. Fields
                 marked with <span className="text-rose-500">*</span> are required.
@@ -359,7 +370,9 @@ export function ContactPage() {
               <Badge className="mb-3 bg-teal-50 text-teal-700 hover:bg-teal-100">
                 Find Us
               </Badge>
-              <h2 className="text-3xl font-bold text-gray-900">Visit our campus</h2>
+              <h2 className="text-3xl font-bold text-gray-900">
+                {mapSection?.title || 'Visit our campus'}
+              </h2>
               <p className="mt-3 text-base text-gray-600">
                 We&apos;re conveniently located in the heart of the city. Stop by for a tour
                 — we&apos;d be delighted to show you around.
@@ -368,7 +381,7 @@ export function ContactPage() {
                 <div className="aspect-[4/3] w-full bg-gray-100">
                   <iframe
                     title="School Location"
-                    src="https://www.openstreetmap.org/export/embed.html?bbox=38.7408%2C8.9806%2C38.7608%2C9.0006&layer=mapnik&marker=9.0006%2C38.7508"
+                    src={mapSection?.embedUrl || 'https://www.openstreetmap.org/export/embed.html?bbox=38.7408%2C8.9806%2C38.7608%2C9.0006&layer=mapnik&marker=9.0006%2C38.7508'}
                     className="h-full w-full border-0"
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
@@ -378,7 +391,9 @@ export function ContactPage() {
                   <div className="flex items-start gap-3">
                     <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-teal-600" />
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">{address}</p>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {mapSection?.address || address}
+                      </p>
                       <p className="mt-1 text-xs text-gray-500">
                         Free parking available. Please check in at the main reception on arrival.
                       </p>
@@ -401,7 +416,7 @@ export function ContactPage() {
           <motion.div {...fadeIn}>
             <div className="rounded-3xl bg-gradient-to-r from-teal-600 to-emerald-700 px-6 py-10 text-center shadow-lg sm:px-12">
               <h2 className="text-2xl font-bold text-white sm:text-3xl">
-                Ready to take the next step?
+                {cta?.title || 'Ready to take the next step?'}
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-teal-50">
                 Apply online today or schedule a personal campus tour with our admissions team.
@@ -412,7 +427,7 @@ export function ContactPage() {
                   onClick={() => navigateToPublic('admission-portal')}
                   className="bg-white text-teal-700 hover:bg-teal-50"
                 >
-                  Apply Now
+                  {cta?.primaryButtonText || 'Apply Now'}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
                 <Button
@@ -421,7 +436,7 @@ export function ContactPage() {
                   onClick={() => navigateToPublic('about')}
                   className="border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white"
                 >
-                  Learn More About Us
+                  {cta?.secondaryButtonText || 'Learn More About Us'}
                 </Button>
               </div>
             </div>

@@ -574,3 +574,37 @@ Stage Summary:
 - Student ID format, Application ID prefix, Tracking number prefix, fee amount, and default password all customizable
 - Live preview shows the formatted result as admin edits
 - Lint passes cleanly
+
+---
+Task ID: REALTIME-BRANDING
+Agent: Main (Claude)
+Task: Real-time header/footer/logo/favicon changer with image uploads + portal branding
+
+Work Log:
+- Updated General tab: added School Tagline and Portal Name fields (3 new settings: school_tagline, portal_name)
+- Updated Branding tab: replaced URL text inputs with image upload component (BrandingImageUpload)
+  - Logo: upload/replace/remove with live preview, saves to /uploads/logo/
+  - Favicon: upload/replace/remove with live preview, saves to /uploads/favicon/
+  - Live header preview showing logo + school name + tagline
+  - Changed BRANDING_KEYS from logo_url/favicon_url to logo/favicon (matching what header reads)
+- Updated PublicHeader: reads school_tagline from settings (replaces hardcoded "Excellence in Education")
+- Updated PublicFooter: reads logo and school_tagline from settings, displays tagline in teal
+- Updated LoginPage: reads school_name, portal_name, and logo from settings
+  - Logo image replaces GraduationCap icon
+  - School name replaces hardcoded "Bright Future Academy"
+  - Portal name replaces hardcoded "School Management System"
+  - Dynamic copyright year and school name
+- Updated PortalLayout sidebar: reads school_name, portal_name, and logo from settings
+  - Logo image replaces GraduationCap icon in sidebar
+  - School name and portal name displayed dynamically
+
+Stage Summary:
+- ALL branding is now configurable via Website Settings (Super Admin only):
+  - General tab: School Name, School Tagline, Portal Name, Address, Phone, Email, Primary Color
+  - Branding tab: Logo upload, Favicon upload (with live preview and remove)
+  - Header/Footer tab: Header text, Footer text (with live preview)
+- Changes apply in real-time: save in admin → instantly reflected on public website, login page, and portal sidebar
+- Verified: Changed tagline to "Empowering Future Leaders" → header and footer updated
+- Verified: Changed portal name to "SMS Portal" → login page updated
+- Verified: Logo image displays in header, footer, login page, and portal sidebar
+- Lint passes cleanly

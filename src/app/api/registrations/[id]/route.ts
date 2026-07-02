@@ -50,10 +50,31 @@ export async function PUT(
         )
       }
 
-      // Generate admission number
-      const year = new Date().getFullYear()
+      // Get custom admission settings
+      const settings = await db.siteSetting.findMany({
+        where: {
+          key: {
+            in: [
+              'admission_prefix', 'admission_year', 'admission_padding', 'admission_start_number',
+              'student_id_prefix', 'student_id_padding', 'admission_default_password',
+            ]
+          }
+        }
+      })
+      const cfgMap: Record<string, string> = {}
+      for (const s of settings) cfgMap[s.key] = s.value
+      const admPrefix = cfgMap.admission_prefix || 'ADM'
+      const admYear = cfgMap.admission_year || String(new Date().getFullYear())
+      const admPadding = parseInt(cfgMap.admission_padding || '3')
+      const admStart = parseInt(cfgMap.admission_start_number || '1')
+      const stuPrefix = cfgMap.student_id_prefix || 'STU'
+      const stuPadding = parseInt(cfgMap.student_id_padding || '3')
+      const defaultPwd = cfgMap.admission_default_password || 'password123'
+
+      // Generate admission number and student ID using custom settings
       const enrollCount = await db.student.count()
-      const admissionNumber = `ADM-${year}-${String(enrollCount + 1).padStart(3, '0')}`
+      const num = admStart + enrollCount
+      const admissionNumber = `${admPrefix}-${admYear}-${String(num).padStart(admPadding, '0')}`
 
       // Find or create grade based on applyForGrade
       let gradeId: string | null = null
@@ -67,7 +88,7 @@ export async function PUT(
 
       // Create user account for the student
       const defaultEmail = `${existing.firstName.toLowerCase()}.${existing.lastName.toLowerCase()}${enrollCount + 1}@school.edu`
-      const passwordHash = await bcrypt.hash('password123', 10)
+      const passwordHash = await bcrypt.hash(defaultPwd, 10)
 
       const newUser = await db.user.create({
         data: {
@@ -80,8 +101,8 @@ export async function PUT(
         },
       })
 
-      // Generate student ID
-      const studentId = `STU-${year}-${String(enrollCount + 1).padStart(3, '0')}`
+      // Generate student ID using custom settings
+      const studentId = `${stuPrefix}-${admYear}-${String(num).padStart(stuPadding, '0')}`
 
       // Create student record
       const student = await db.student.create({

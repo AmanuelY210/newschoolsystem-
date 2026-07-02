@@ -41,10 +41,38 @@ export async function GET(req: NextRequest) {
   }
 }
 
-function generateTrackingNumber(): string {
-  const year = new Date().getFullYear()
+// Helper: get admission settings from SiteSetting table
+async function getAdmissionSettings() {
+  const settings = await db.siteSetting.findMany({
+    where: {
+      key: {
+        in: [
+          'admission_prefix', 'admission_year', 'admission_padding', 'admission_start_number',
+          'student_id_prefix', 'student_id_padding',
+          'application_id_prefix', 'tracking_prefix',
+          'admission_default_password',
+        ]
+      }
+    }
+  })
+  const map: Record<string, string> = {}
+  for (const s of settings) map[s.key] = s.value
+  return {
+    admissionPrefix: map.admission_prefix || 'ADM',
+    admissionYear: map.admission_year || String(new Date().getFullYear()),
+    admissionPadding: parseInt(map.admission_padding || '3'),
+    admissionStartNumber: parseInt(map.admission_start_number || '1'),
+    studentIdPrefix: map.student_id_prefix || 'STU',
+    studentIdPadding: parseInt(map.student_id_padding || '3'),
+    applicationIdPrefix: map.application_id_prefix || 'APP',
+    trackingPrefix: map.tracking_prefix || 'TRK',
+    defaultPassword: map.admission_default_password || 'password123',
+  }
+}
+
+function generateTrackingNumber(prefix: string, year: string): string {
   const random = Math.random().toString(36).substring(2, 8).toUpperCase()
-  return `TRK-${year}-${random}`
+  return `${prefix}-${year}-${random}`
 }
 
 // POST /api/registrations - create application (public, no auth required)
@@ -97,16 +125,18 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Generate unique applicationId and trackingNumber
+    // Get custom admission settings
+    const cfg = await getAdmissionSettings()
+
+    // Generate unique applicationId and trackingNumber using custom prefixes
     const count = await db.registrationApplication.count()
-    const year = new Date().getFullYear()
-    const applicationId = `APP-${year}-${String(count + 1).padStart(3, '0')}`
-    let trackingNumber = generateTrackingNumber()
+    const applicationId = `${cfg.applicationIdPrefix}-${cfg.admissionYear}-${String(count + 1).padStart(3, '0')}`
+    let trackingNumber = generateTrackingNumber(cfg.trackingPrefix, cfg.admissionYear)
 
     // Ensure tracking number is unique
     let existing = await db.registrationApplication.findUnique({ where: { trackingNumber } })
     while (existing) {
-      trackingNumber = generateTrackingNumber()
+      trackingNumber = generateTrackingNumber(cfg.trackingPrefix, cfg.admissionYear)
       existing = await db.registrationApplication.findUnique({ where: { trackingNumber } })
     }
 

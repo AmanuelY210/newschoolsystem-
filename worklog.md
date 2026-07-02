@@ -549,3 +549,28 @@ Stage Summary:
 - Header/Footer editable via Website Settings module
 - Media gallery manageable via CMS Media tab
 - Lint passes cleanly, all APIs returning 200
+
+---
+Task ID: ADMISSION-NUMBER-CUSTOM
+Agent: Main (Claude)
+Task: Add admission number customization to Website Settings for Super Admin
+
+Work Log:
+- Added new "Admission" tab to WebsiteSettingsModule (6 tabs now: General, Branding, Header/Footer, SEO, Admission, Social)
+- Created admission settings form with 4 sections:
+  1. Admission Number Format: prefix (default ADM), year, padding, start number + live preview
+  2. Student ID Format: prefix (default STU), padding + live preview
+  3. Application & Tracking Number Prefixes: APP prefix, TRK prefix + previews
+  4. Payment & Account Defaults: admission fee amount, default student password
+- Added 10 new SiteSetting keys: admission_prefix, admission_year, admission_padding, admission_start_number, student_id_prefix, student_id_padding, application_id_prefix, tracking_prefix, admission_fee_amount, admission_default_password
+- Updated registrations POST API to use custom prefixes from settings (application ID, tracking number)
+- Updated registrations [id] PUT API enrollment to use custom prefixes (admission number, student ID, default password)
+- Live preview shows formatted IDs as admin types
+- All settings stored in SiteSetting table, with fallback defaults
+
+Stage Summary:
+- Super Admin can now customize all admission-related number formats via Website Settings → Admission tab
+- Verified: Changed prefix from ADM to BFA, saved, enrolled a student → admission number = BFA-2026-016
+- Student ID format, Application ID prefix, Tracking number prefix, fee amount, and default password all customizable
+- Live preview shows the formatted result as admin edits
+- Lint passes cleanly

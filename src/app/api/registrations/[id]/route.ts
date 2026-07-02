@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
+import bcrypt from 'bcryptjs'
 
-// PUT /api/registrations/[id] - update application status (admin/super_admin only)
+// PUT /api/registrations/[id] - update application status / payment / enroll
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -19,23 +20,128 @@ export async function PUT(
     if (!existing) return NextResponse.json({ error: 'Application not found' }, { status: 404 })
 
     const body = await req.json()
-    const { status, remarks } = body
+    const {
+      status,
+      remarks,
+      // Payment setup (admin only)
+      payCode,
+      paymentAmount,
+      paymentMethod,
+      // Enrollment
+      enroll,
+    } = body
 
-    if (status && !['pending', 'approved', 'rejected', 'enrolled'].includes(status)) {
+    // Validate status
+    const validStatuses = ['submitted', 'under_review', 'approved', 'rejected', 'enrolled']
+    if (status && !validStatuses.includes(status)) {
       return NextResponse.json(
-        { error: 'Invalid status. Must be: pending, approved, rejected, or enrolled' },
+        { error: `Invalid status. Must be: ${validStatuses.join(', ')}` },
         { status: 400 }
       )
     }
 
+    // Handle ENROLLMENT - convert application to a Student
+    if (enroll || status === 'enrolled') {
+      // Check if already enrolled
+      if (existing.admissionNumber) {
+        return NextResponse.json(
+          { error: 'Application already enrolled', admissionNumber: existing.admissionNumber },
+          { status: 400 }
+        )
+      }
+
+      // Generate admission number
+      const year = new Date().getFullYear()
+      const enrollCount = await db.student.count()
+      const admissionNumber = `ADM-${year}-${String(enrollCount + 1).padStart(3, '0')}`
+
+      // Find or create grade based on applyForGrade
+      let gradeId: string | null = null
+      if (existing.applyForGrade) {
+        const gradeLevel = parseInt(existing.applyForGrade.replace(/\D/g, ''))
+        if (!isNaN(gradeLevel)) {
+          const grade = await db.grade.findFirst({ where: { level: gradeLevel } })
+          if (grade) gradeId = grade.id
+        }
+      }
+
+      // Create user account for the student
+      const defaultEmail = `${existing.firstName.toLowerCase()}.${existing.lastName.toLowerCase()}${enrollCount + 1}@school.edu`
+      const passwordHash = await bcrypt.hash('password123', 10)
+
+      const newUser = await db.user.create({
+        data: {
+          email: defaultEmail,
+          password: passwordHash,
+          name: `${existing.firstName} ${existing.lastName}`,
+          role: 'student',
+          phone: existing.guardianPhone,
+          avatar: existing.studentPhoto || null,
+        },
+      })
+
+      // Generate student ID
+      const studentId = `STU-${year}-${String(enrollCount + 1).padStart(3, '0')}`
+
+      // Create student record
+      const student = await db.student.create({
+        data: {
+          userId: newUser.id,
+          studentId,
+          firstName: existing.firstName,
+          lastName: existing.lastName,
+          gender: existing.gender,
+          dateOfBirth: existing.dateOfBirth,
+          nationalId: existing.nationalId,
+          gradeId,
+          guardianName: existing.guardianName,
+          guardianPhone: existing.guardianPhone,
+          guardianEmail: existing.guardianEmail,
+          address: existing.guardianAddress,
+          photoUrl: existing.studentPhoto,
+          status: 'active',
+        },
+      })
+
+      // Update application with enrollment info
+      const application = await db.registrationApplication.update({
+        where: { id },
+        data: {
+          status: 'enrolled',
+          admissionNumber,
+          enrollRemarks: remarks || existing.enrollRemarks,
+          enrolledAt: new Date(),
+          reviewedAt: new Date(),
+          reviewedBy: user.id,
+          reviewedByName: user.name,
+        },
+      })
+
+      return NextResponse.json({
+        application,
+        student,
+        admissionNumber,
+        studentEmail: defaultEmail,
+        message: `Student enrolled successfully. Admission Number: ${admissionNumber}. Login email: ${defaultEmail}`,
+      })
+    }
+
+    // Handle payment setup (admin/super_admin)
+    const updateData: any = {}
+    if (status) updateData.status = status
+    if (remarks !== undefined) updateData.remarks = remarks
+    if (payCode !== undefined) updateData.payCode = payCode
+    if (paymentAmount !== undefined) updateData.paymentAmount = parseFloat(paymentAmount) || 0
+    if (paymentMethod !== undefined) updateData.paymentMethod = paymentMethod
+    if (status || remarks !== undefined) {
+      updateData.reviewedAt = new Date()
+      updateData.reviewedBy = user.id
+      updateData.reviewedByName = user.name
+    }
+
     const application = await db.registrationApplication.update({
       where: { id },
-      data: {
-        status: status || existing.status,
-        remarks: remarks !== undefined ? remarks : existing.remarks,
-        reviewedAt: new Date(),
-        reviewedBy: user.id,
-      },
+      data: updateData,
     })
 
     return NextResponse.json({ application })

@@ -8,6 +8,8 @@ import { HomePage } from './pages/HomePage'
 import { AboutPage } from './pages/AboutPage'
 import { AcademyPage } from './pages/AcademyPage'
 import { AdmissionsPage } from './pages/AdmissionsPage'
+import { AdmissionPortalPage } from './pages/AdmissionPortalPage'
+import { TrackApplicationPage } from './pages/TrackApplicationPage'
 import { MediaPage } from './pages/MediaPage'
 import { TeachersPage } from './pages/TeachersPage'
 import { StudentsPage } from './pages/StudentsPage'
@@ -33,6 +35,10 @@ export function PublicSite() {
         return <AcademyPage />
       case 'admissions':
         return <AdmissionsPage />
+      case 'admission-portal':
+        return <AdmissionPortalPage />
+      case 'track':
+        return <TrackApplicationPage />
       case 'media-photos':
         return <MediaPage key="photo" type="photo" />
       case 'media-videos':

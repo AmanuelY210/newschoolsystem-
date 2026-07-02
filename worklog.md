@@ -392,3 +392,43 @@ Stage Summary:
 - All CRUD operations working
 - Lint passes cleanly (0 errors)
 - Dev server running on port 3000
+
+---
+Task ID: ADMISSION-PORTAL
+Agent: Main (Claude)
+Task: Build comprehensive admission portal with 5-step form, tracking, and admin approval/enrollment workflow
+
+Work Log:
+- Updated Prisma schema RegistrationApplication model with 30+ fields (grandfather name, program, field, media of instruction, age, national ID, student photo, academic background, guardian relationship, 6 document URLs, payment method/pay code/amount/receipt, tracking number, admission number, enrollment workflow)
+- Created file upload API endpoint (/api/upload) supporting images and PDFs up to 10MB
+- Updated registrations API to generate unique tracking numbers (TRK-2026-XXXXXX) and application IDs
+- Created public tracking API endpoint (/api/registrations/track/[trackingNumber]) returning application status and timeline
+- Updated registrations [id] PUT endpoint to handle: approve, reject, enroll (creates Student + User account), payment setup (pay code, amount, method)
+- Built 5-step Admission Portal page:
+  - Step 1: Student Information (name, grandfather, gender, program, field, media of instruction, DOB, age, national ID, photo upload)
+  - Step 2: Academic Background (apply grade, last grade, average, school, registration condition)
+  - Step 3: Guardian Information (name, relationship, phone, email, address)
+  - Step 4: Document Upload (certificate front/back, student ID, parent photo, parent ID, clearance)
+  - Step 5: Payment Processing (Telebirr/CBE Birr selection, QR code display, pay code, receipt upload)
+  - Progress bar with step indicators, form validation, animated transitions
+  - Success screen showing tracking number
+- Built Track Application page with search, status display, timeline visualization, admin remarks
+- Updated AdmissionsPage with CTA cards linking to portal and tracking
+- Updated PublicHeader with Admissions dropdown (Info, Apply Online, Track Application)
+- Enhanced admin RegistrationsModule with:
+  - Live preview dialog with tabbed view (Student, Academic, Guardian, Documents, Payment)
+  - Payment setup dialog (admin sets price + generates pay code)
+  - Approve/Reject/Enroll workflow with remarks
+  - Enrollment creates Student + User account, generates admission number (ADM-2026-XXX)
+  - Shows enrollment result with login credentials
+  - Search and filter by status
+  - 6 stat cards (Total, Submitted, Under Review, Approved, Rejected, Enrolled)
+
+Stage Summary:
+- Complete admission portal with 5-step wizard verified working
+- Tracking number system verified (TRK-2026-6INJP9)
+- Admin payment setup verified (500 ETB, SCH-2026-XXXXXX pay code)
+- Approve workflow verified (submitted → under_review → approved → enrolled)
+- Enrollment verified: creates Student record with ADM-2026-014, STU-2026-014, login email
+- Public tracking page shows full timeline with enrollment status
+- All APIs returning 200, lint passes cleanly

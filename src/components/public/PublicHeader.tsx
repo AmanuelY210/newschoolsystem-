@@ -36,7 +36,15 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Home', page: 'home' },
   { label: 'About Us', page: 'about' },
   { label: 'Academy', page: 'academy' },
-  { label: 'Admissions', page: 'admissions' },
+  {
+    label: 'Admissions',
+    page: 'admissions',
+    children: [
+      { label: 'Admissions Info', page: 'admissions', icon: GraduationCap },
+      { label: 'Apply Online', page: 'admission-portal', icon: GraduationCap },
+      { label: 'Track Application', page: 'track', icon: GraduationCap },
+    ],
+  },
   {
     label: 'Media',
     page: 'media-photos',

@@ -13,7 +13,7 @@ export interface AuthUser {
   avatar?: string | null
 }
 
-export type PublicPage = 'home' | 'about' | 'academy' | 'admissions' | 'media-photos' | 'media-videos' | 'teachers' | 'students' | 'contact'
+export type PublicPage = 'home' | 'about' | 'academy' | 'admissions' | 'admission-portal' | 'track' | 'media-photos' | 'media-videos' | 'teachers' | 'students' | 'contact'
 
 interface AppState {
   // Auth

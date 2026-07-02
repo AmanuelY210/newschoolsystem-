@@ -17,6 +17,7 @@ import {
   User,
   Home,
   School,
+  Search,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -237,6 +238,52 @@ We accept applications year-round, with the main intake in September. Limited pl
               ))}
             </motion.div>
           )}
+        </div>
+      </section>
+
+      {/* ADMISSION PORTAL CTA */}
+      <section className="pb-16 lg:pb-20">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+          <motion.div {...fadeIn} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-teal-600 to-emerald-700 p-8 text-white shadow-xl">
+              <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
+              <div className="absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-white/5" />
+              <div className="relative">
+                <GraduationCap className="h-10 w-10 mb-4" />
+                <h3 className="text-2xl font-bold mb-2">Admission Portal 2026</h3>
+                <p className="text-teal-50 mb-6">
+                  Complete our 5-step online admission application with document uploads and Telebirr/CBE payment.
+                </p>
+                <Button
+                  size="lg"
+                  onClick={() => navigateToPublic('admission-portal')}
+                  className="bg-white text-teal-700 hover:bg-teal-50"
+                >
+                  Start Application
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            </Card>
+            <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-gray-800 to-gray-900 p-8 text-white shadow-xl">
+              <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
+              <div className="relative">
+                <Search className="h-10 w-10 mb-4" />
+                <h3 className="text-2xl font-bold mb-2">Track Your Application</h3>
+                <p className="text-gray-300 mb-6">
+                  Already applied? Enter your tracking number to check your admission status in real-time.
+                </p>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={() => navigateToPublic('track')}
+                  className="border-white text-white hover:bg-white hover:text-gray-900"
+                >
+                  Track Application
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            </Card>
+          </motion.div>
         </div>
       </section>
 

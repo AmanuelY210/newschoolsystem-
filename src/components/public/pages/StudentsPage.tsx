@@ -445,7 +445,7 @@ export function StudentsPage() {
               <div className="mt-6">
                 <Button
                   size="lg"
-                  onClick={() => navigateToPublic('admissions')}
+                  onClick={() => navigateToPublic('admission-portal')}
                   className="bg-white text-teal-700 hover:bg-teal-50"
                 >
                   Apply Now

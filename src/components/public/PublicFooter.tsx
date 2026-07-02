@@ -36,7 +36,8 @@ const SOCIAL_ICONS: Record<string, any> = {
 const QUICK_LINKS: { label: string; page: PublicPage }[] = [
   { label: 'About Us', page: 'about' },
   { label: 'Academy', page: 'academy' },
-  { label: 'Admissions', page: 'admissions' },
+  { label: 'Apply Online', page: 'admission-portal' },
+  { label: 'Track Application', page: 'track' },
   { label: 'Teachers', page: 'teachers' },
   { label: 'Photo Gallery', page: 'media-photos' },
   { label: 'Video Gallery', page: 'media-videos' },

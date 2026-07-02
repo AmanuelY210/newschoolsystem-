@@ -7,7 +7,6 @@ import { PublicFooter } from './PublicFooter'
 import { HomePage } from './pages/HomePage'
 import { AboutPage } from './pages/AboutPage'
 import { AcademyPage } from './pages/AcademyPage'
-import { AdmissionsPage } from './pages/AdmissionsPage'
 import { AdmissionPortalPage } from './pages/AdmissionPortalPage'
 import { TrackApplicationPage } from './pages/TrackApplicationPage'
 import { MediaPage } from './pages/MediaPage'
@@ -33,8 +32,6 @@ export function PublicSite() {
         return <AboutPage />
       case 'academy':
         return <AcademyPage />
-      case 'admissions':
-        return <AdmissionsPage />
       case 'admission-portal':
         return <AdmissionPortalPage />
       case 'track':

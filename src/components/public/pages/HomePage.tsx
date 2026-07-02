@@ -173,7 +173,7 @@ export function HomePage() {
             >
               <Button
                 size="lg"
-                onClick={() => navigateToPublic('admissions')}
+                onClick={() => navigateToPublic('admission-portal')}
                 className="bg-white text-teal-700 hover:bg-teal-50 shadow-lg"
               >
                 Apply Now
@@ -553,7 +553,7 @@ export function HomePage() {
                 <div className="flex flex-col gap-3 sm:flex-row lg:justify-end">
                   <Button
                     size="lg"
-                    onClick={() => navigateToPublic('admissions')}
+                    onClick={() => navigateToPublic('admission-portal')}
                     className="bg-white text-teal-700 hover:bg-teal-50 shadow-lg"
                   >
                     Apply Online

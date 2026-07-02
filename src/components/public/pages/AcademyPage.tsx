@@ -396,7 +396,7 @@ From early literacy to advanced sciences, every subject is taught by specialists
               <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
                 <Button
                   size="lg"
-                  onClick={() => navigateToPublic('admissions')}
+                  onClick={() => navigateToPublic('admission-portal')}
                   className="bg-white text-teal-700 hover:bg-teal-50"
                 >
                   Apply Now

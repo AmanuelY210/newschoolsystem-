@@ -38,9 +38,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Academy', page: 'academy' },
   {
     label: 'Admissions',
-    page: 'admissions',
+    page: 'admission-portal',
     children: [
-      { label: 'Admissions Info', page: 'admissions', icon: GraduationCap },
       { label: 'Apply Online', page: 'admission-portal', icon: GraduationCap },
       { label: 'Track Application', page: 'track', icon: GraduationCap },
     ],

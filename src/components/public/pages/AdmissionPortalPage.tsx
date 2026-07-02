@@ -688,14 +688,14 @@ export function AdmissionPortalPage() {
           </motion.div>
         </AnimatePresence>
 
-        {/* Back to admissions info */}
+        {/* Back to home */}
         <div className="text-center mt-6">
           <button
-            onClick={() => navigateToPublic('admissions')}
+            onClick={() => navigateToPublic('home')}
             className="text-sm text-teal-600 hover:underline inline-flex items-center gap-1"
           >
             <ChevronLeft className="h-3 w-3" />
-            Back to Admissions Info
+            Back to Home
           </button>
         </div>
       </div>

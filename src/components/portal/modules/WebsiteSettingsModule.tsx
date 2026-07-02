@@ -20,7 +20,7 @@ import {
   Save, ShieldAlert, Building2, Image as ImageIcon, PanelTop,
   Search, Facebook, Twitter, Instagram, Youtube, Linkedin, Send,
   Plus, Edit, Trash2, ExternalLink, Globe, Palette,
-  GraduationCap, Hash, IdCard, CreditCard, FileText,
+  GraduationCap, Hash, IdCard, CreditCard, FileText, Upload, Loader2,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -52,8 +52,126 @@ function AccessDenied() {
   )
 }
 
-const GENERAL_KEYS = ['school_name', 'school_address', 'school_phone', 'school_email', 'primary_color']
-const BRANDING_KEYS = ['logo_url', 'favicon_url']
+// ============ BRANDING IMAGE UPLOAD COMPONENT ============
+function BrandingImageUpload({
+  label,
+  description,
+  value,
+  onChange,
+  onSave,
+  previewClass,
+  isFavicon,
+}: {
+  label: string
+  description: string
+  value: string
+  onChange: (url: string) => void
+  onSave: () => void
+  previewClass: string
+  isFavicon?: boolean
+}) {
+  const [uploading, setUploading] = useState(false)
+  const { toast } = useToast()
+
+  const handleUpload = async (file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: 'File too large', description: 'Maximum file size is 5MB', variant: 'destructive' })
+      return
+    }
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('folder', isFavicon ? 'favicon' : 'logo')
+      const res = await fetch('/api/upload', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      onChange(data.url)
+      toast({ title: 'Uploaded', description: `${label} uploaded successfully` })
+    } catch (error: any) {
+      toast({ title: 'Upload failed', description: error.message, variant: 'destructive' })
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleRemove = () => {
+    onChange('')
+    toast({ title: 'Removed', description: `${label} removed. Click Save to apply.` })
+  }
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <Label>{label}</Label>
+        <p className="text-xs text-gray-500 mt-0.5">{description}</p>
+      </div>
+      <div className="rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 p-4 flex flex-col items-center justify-center min-h-[140px] gap-2">
+        {value ? (
+          <>
+            <div className="bg-white rounded-lg p-2 shadow-sm">
+              <img src={value} alt={label} className={previewClass} />
+            </div>
+            <div className="flex gap-2">
+              <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-gray-200 bg-white cursor-pointer hover:bg-gray-50">
+                {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+                {uploading ? 'Uploading...' : 'Replace'}
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) handleUpload(file)
+                  }}
+                />
+              </label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs text-red-600 border-red-200 hover:bg-red-50"
+                onClick={handleRemove}
+              >
+                <Trash2 className="h-3 w-3 mr-1" />
+                Remove
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <ImageIcon className="h-10 w-10 text-gray-300" />
+            <p className="text-xs text-gray-400">No image uploaded</p>
+            <label className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-md bg-teal-700 text-white cursor-pointer hover:bg-teal-800">
+              {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+              {uploading ? 'Uploading...' : `Upload ${label}`}
+              <input
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) handleUpload(file)
+                }}
+              />
+            </label>
+          </>
+        )}
+      </div>
+      {value && (
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Image URL (auto-filled on upload)"
+          className="text-xs font-mono"
+        />
+      )}
+    </div>
+  )
+}
+
+const GENERAL_KEYS = ['school_name', 'school_tagline', 'portal_name', 'school_address', 'school_phone', 'school_email', 'primary_color']
+const BRANDING_KEYS = ['logo', 'favicon']
 const HEADER_FOOTER_KEYS = ['header_text', 'footer_text']
 const SEO_KEYS = ['seo_title', 'seo_description', 'seo_keywords']
 const ADMISSION_KEYS = [
@@ -248,6 +366,25 @@ export function WebsiteSettingsModule() {
                       onChange={(e) => setGeneralForm({ ...generalForm, school_name: e.target.value })}
                       placeholder="Bright Future Academy"
                     />
+                    <p className="text-xs text-gray-500">Displayed in the website header and footer</p>
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label>School Tagline</Label>
+                    <Input
+                      value={generalForm.school_tagline || ''}
+                      onChange={(e) => setGeneralForm({ ...generalForm, school_tagline: e.target.value })}
+                      placeholder="Excellence in Education"
+                    />
+                    <p className="text-xs text-gray-500">Short slogan shown next to the school name (e.g., "Excellence in Education")</p>
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label>Portal Name</Label>
+                    <Input
+                      value={generalForm.portal_name || ''}
+                      onChange={(e) => setGeneralForm({ ...generalForm, portal_name: e.target.value })}
+                      placeholder="Bright Future Academy Portal"
+                    />
+                    <p className="text-xs text-gray-500">Title shown on the login page and portal sidebar</p>
                   </div>
                   <div className="space-y-2 sm:col-span-2">
                     <Label>Address</Label>
@@ -309,51 +446,58 @@ export function WebsiteSettingsModule() {
                   <Palette className="h-5 w-5 text-teal-600" />
                   Branding
                 </CardTitle>
-                <CardDescription>School logo and favicon</CardDescription>
+                <CardDescription>Upload and manage school logo and favicon - changes apply in real-time</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <Label>Logo URL</Label>
-                    <Input
-                      value={brandingForm.logo_url || ''}
-                      onChange={(e) => setBrandingForm({ ...brandingForm, logo_url: e.target.value })}
-                      placeholder="https://..."
-                    />
-                    <div className="rounded-lg border bg-gray-50 p-4 flex items-center justify-center min-h-[100px]">
-                      {brandingForm.logo_url ? (
-                        <img src={brandingForm.logo_url} alt="Logo preview" className="max-h-20 object-contain" />
-                      ) : (
-                        <div className="text-center text-gray-400">
-                          <ImageIcon className="h-8 w-8 mx-auto mb-1" />
-                          <p className="text-xs">Logo preview</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <Label>Favicon URL</Label>
-                    <Input
-                      value={brandingForm.favicon_url || ''}
-                      onChange={(e) => setBrandingForm({ ...brandingForm, favicon_url: e.target.value })}
-                      placeholder="https://..."
-                    />
-                    <div className="rounded-lg border bg-gray-50 p-4 flex items-center justify-center min-h-[100px]">
-                      {brandingForm.favicon_url ? (
-                        <img src={brandingForm.favicon_url} alt="Favicon preview" className="max-h-16 max-w-16 object-contain" />
-                      ) : (
-                        <div className="text-center text-gray-400">
-                          <ImageIcon className="h-8 w-8 mx-auto mb-1" />
-                          <p className="text-xs">Favicon preview</p>
-                        </div>
-                      )}
+                  <BrandingImageUpload
+                    label="School Logo"
+                    description="Displayed in the header, footer, and login page (recommended: 200x200px, PNG/SVG)"
+                    value={brandingForm.logo || ''}
+                    onChange={(url) => setBrandingForm({ ...brandingForm, logo: url })}
+                    onSave={() => saveTab('branding', brandingForm)}
+                    previewClass="max-h-20 object-contain"
+                  />
+                  <BrandingImageUpload
+                    label="Favicon"
+                    description="Browser tab icon (recommended: 32x32px, PNG/ICO)"
+                    value={brandingForm.favicon || ''}
+                    onChange={(url) => setBrandingForm({ ...brandingForm, favicon: url })}
+                    onSave={() => saveTab('branding', brandingForm)}
+                    previewClass="max-h-16 max-w-16 object-contain"
+                    isFavicon
+                  />
+                </div>
+
+                {/* Live Header Preview */}
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                  <p className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <PanelTop className="h-4 w-4 text-teal-600" />
+                    Live Header Preview
+                  </p>
+                  <div className="bg-white rounded-lg border p-4 flex items-center gap-3">
+                    {brandingForm.logo ? (
+                      <img src={brandingForm.logo} alt="Logo" className="h-8 w-8 object-contain" />
+                    ) : (
+                      <div className="h-8 w-8 rounded-lg bg-teal-700 flex items-center justify-center">
+                        <GraduationCap className="h-5 w-5 text-white" />
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-bold text-sm text-gray-900">
+                        {generalForm.school_name || 'Bright Future Academy'}
+                      </p>
+                      <p className="text-xs text-teal-600">
+                        {generalForm.school_tagline || 'Excellence in Education'}
+                      </p>
                     </div>
                   </div>
                 </div>
+
                 <div className="flex justify-end pt-4 border-t">
                   <Button onClick={() => saveTab('branding', brandingForm)} disabled={savingTab === 'branding'} className="bg-teal-700 hover:bg-teal-800">
                     <Save className="h-4 w-4 mr-2" />
-                    {savingTab === 'branding' ? 'Saving...' : 'Save Changes'}
+                    {savingTab === 'branding' ? 'Saving...' : 'Save & Apply Changes'}
                   </Button>
                 </div>
               </CardContent>

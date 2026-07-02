@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAppStore, UserRole } from '@/lib/store'
 import { ROLE_MODULES, ROLE_LABELS, ROLE_COLORS } from '@/lib/nav-config'
 import { Button } from '@/components/ui/button'
@@ -35,9 +35,10 @@ interface SidebarContentProps {
   onNavigate: (moduleId: string) => void
   onViewWebsite: () => void
   onLogout: () => void
+  settings: Record<string, string>
 }
 
-function SidebarContent({ user, modules, currentModuleId, onNavigate, onViewWebsite, onLogout }: SidebarContentProps) {
+function SidebarContent({ user, modules, currentModuleId, onNavigate, onViewWebsite, onLogout, settings }: SidebarContentProps) {
   const initials = user.name
     .split(' ')
     .map((n) => n[0])
@@ -45,16 +46,24 @@ function SidebarContent({ user, modules, currentModuleId, onNavigate, onViewWebs
     .toUpperCase()
     .slice(0, 2)
 
+  const schoolName = settings.school_name || 'Bright Future Academy'
+  const portalName = settings.portal_name || 'Portal'
+  const logo = settings.logo || ''
+
   return (
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center gap-2 px-6 py-5 border-b">
-        <div className="h-10 w-10 rounded-lg bg-teal-700 flex items-center justify-center">
-          <GraduationCap className="h-6 w-6 text-white" />
+        <div className="h-10 w-10 rounded-lg bg-teal-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+          {logo ? (
+            <img src={logo} alt={schoolName} className="h-8 w-8 object-contain" />
+          ) : (
+            <GraduationCap className="h-6 w-6 text-white" />
+          )}
         </div>
-        <div>
-          <h1 className="font-bold text-sm text-gray-900">Bright Future</h1>
-          <p className="text-xs text-gray-500">Academy Portal</p>
+        <div className="min-w-0">
+          <h1 className="font-bold text-sm text-gray-900 truncate">{schoolName}</h1>
+          <p className="text-xs text-gray-500 truncate">{portalName}</p>
         </div>
       </div>
 
@@ -126,6 +135,14 @@ export function PortalLayout({ children }: PortalLayoutProps) {
   const { connected, onlineCount, notifications, clearNotifications } = useWebSocket()
   const { toast } = useToast()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [settings, setSettings] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((r) => r.json())
+      .then((data) => setSettings(data.settings || {}))
+      .catch(() => {})
+  }, [])
 
   if (!user) return null
 
@@ -156,6 +173,7 @@ export function PortalLayout({ children }: PortalLayoutProps) {
     onNavigate: handleNavigate,
     onViewWebsite: () => navigateToPublic('home'),
     onLogout: handleLogout,
+    settings,
   }
 
   return (

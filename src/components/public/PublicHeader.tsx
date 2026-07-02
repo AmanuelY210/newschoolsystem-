@@ -78,6 +78,7 @@ export function PublicHeader() {
   }, [])
 
   const schoolName = settings.school_name || 'Bright Future Academy'
+  const tagline = settings.school_tagline || 'Excellence in Education'
   const logo = settings.logo || '/logo.svg'
   const go = (page: PublicPage) => {
     navigateToPublic(page)
@@ -113,7 +114,7 @@ export function PublicHeader() {
               {schoolName}
             </span>
             <span className="hidden text-[11px] font-medium uppercase tracking-wider text-teal-600 sm:block">
-              Excellence in Education
+              {tagline}
             </span>
           </div>
         </button>

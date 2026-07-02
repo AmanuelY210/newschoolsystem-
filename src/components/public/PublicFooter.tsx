@@ -61,6 +61,8 @@ export function PublicFooter() {
   }, [])
 
   const schoolName = settings.school_name || 'Bright Future Academy'
+  const tagline = settings.school_tagline || 'Excellence in Education'
+  const logo = settings.logo || ''
   const address = settings.school_address || 'Bole Road, Addis Ababa, Ethiopia'
   const phone = settings.school_phone || '+251 11 234 5678'
   const email = settings.school_email || 'info@brightfuture.edu'
@@ -78,10 +80,17 @@ export function PublicFooter() {
           {/* School Info */}
           <div className="space-y-4">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 shadow-md">
-                <GraduationCap className="h-6 w-6 text-white" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 shadow-md overflow-hidden">
+                {logo ? (
+                  <img src={logo} alt={schoolName} className="h-8 w-8 object-contain" />
+                ) : (
+                  <GraduationCap className="h-6 w-6 text-white" />
+                )}
               </div>
-              <span className="text-lg font-bold text-white">{schoolName}</span>
+              <div>
+                <span className="text-lg font-bold text-white block">{schoolName}</span>
+                <span className="text-[11px] uppercase tracking-wider text-teal-400">{tagline}</span>
+              </div>
             </div>
             <p className="text-sm leading-relaxed text-gray-400">
               Nurturing minds, building character, and shaping tomorrow&apos;s leaders through

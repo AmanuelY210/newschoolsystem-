@@ -35,6 +35,19 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [settings, setSettings] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((r) => r.json())
+      .then((data) => setSettings(data.settings || {}))
+      .catch(() => {})
+  }, [])
+
+  const schoolName = settings.school_name || 'Bright Future Academy'
+  const tagline = settings.school_tagline || 'Excellence in Education'
+  const portalName = settings.portal_name || 'School Management System'
+  const logo = settings.logo || ''
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -92,12 +105,16 @@ export function LoginPage() {
           </button>
 
           <div className="flex items-center gap-3 mb-8">
-            <div className="h-14 w-14 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
-              <GraduationCap className="h-8 w-8" />
+            <div className="h-14 w-14 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center overflow-hidden">
+              {logo ? (
+                <img src={logo} alt={schoolName} className="h-10 w-10 object-contain" />
+              ) : (
+                <GraduationCap className="h-8 w-8" />
+              )}
             </div>
             <div>
-              <h1 className="text-2xl font-bold">Bright Future Academy</h1>
-              <p className="text-teal-100 text-sm">School Management System</p>
+              <h1 className="text-2xl font-bold">{schoolName}</h1>
+              <p className="text-teal-100 text-sm">{portalName}</p>
             </div>
           </div>
 
@@ -122,7 +139,7 @@ export function LoginPage() {
         </div>
 
         <p className="relative z-10 text-teal-200 text-sm mt-8">
-          © 2024 Bright Future Academy. All rights reserved.
+          © {new Date().getFullYear()} {schoolName}. All rights reserved.
         </p>
       </div>
 

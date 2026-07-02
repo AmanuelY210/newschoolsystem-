@@ -1,0 +1,280 @@
+     1→     1→# School Management System - Worklog
+     2→     2→
+     3→     3→## Project Overview
+     4→     4→Building a comprehensive School Management System with:
+     5→     5→- Public website (Home, About, Academy, Admissions, Media, Teachers, Students, Contact)
+     6→     6→- 6 Role Portals (Super Admin, Admin, Teachers, Student, Finance, Library)
+     7→     7→- Real-time data via WebSocket
+     8→     8→- Prisma + SQLite database
+     9→     9→
+    10→    10→## Tech Stack
+    11→    11→- Next.js 16 + TypeScript
+    12→    12→- Tailwind CSS 4 + shadcn/ui
+    13→    13→- Prisma ORM (SQLite)
+    14→    14→- Socket.io for real-time
+    15→    15→- Zustand for state management
+    16→    16→
+    17→    17→## Default Login Credentials
+    18→    18→- Super Admin: superadmin@school.edu / password123
+    19→    19→- Admin: admin@school.edu / password123
+    20→    20→- Teacher: teacher@school.edu / password123
+    21→    21→- Student: student@school.edu / password123
+    22→    22→- Finance: finance@school.edu / password123
+    23→    23→- Library: library@school.edu / password123
+    24→    24→
+    25→    25→---
+    26→    26→Task ID: 1
+    27→    27→Agent: Main (Claude)
+    28→    28→Task: Design and create Prisma database schema
+    29→    29→
+    30→    30→Work Log:
+    31→    31→- Created comprehensive schema with 20+ models
+    32→    32→- Models: User, Student, Teacher, Grade, Section, Subject, Mark, Attendance, Assignment, AssignmentSubmission, Promotion, ReportCard, Rank, FinanceStaff, FinanceTransaction, FeeStructure, Librarian, Book, LibraryLoan, HRStaff, IDCard, Certificate, CMSPage, SiteSetting, SocialLink, MediaItem, RegistrationApplication, ContactMessage, Notification, Event
+    33→    33→- Pushed schema to SQLite database
+    34→    34→- Created seed script with 6 role users, 13 students, 6 teachers, marks, attendance, assignments, finance transactions, books, loans, CMS pages, site settings, social links, media items, events
+    35→    35→
+    36→    36→Stage Summary:
+    37→    37→- Database schema complete and seeded
+    38→    38→- All models support the full school management system requirements
+    39→    39→- Ready for API routes and frontend development
+    40→    40→
+    41→    41→---
+    42→    42→Task ID: 2-a
+    43→    43→Agent: Sub-agent (general-purpose)
+    44→    44→Task: Build academic API routes for School Management System
+    45→    45→
+    46→    46→Work Log:
+    47→    47→- Read existing reference patterns from /api/students/route.ts and /api/students/[id]/route.ts
+    48→    48→- Reviewed Prisma schema, auth helpers (getCurrentUser, hasPermission), and db client
+    49→    49→- Created 15 API route files following the established patterns:
+    50→    50→
+    51→    51→1. /api/teachers/route.ts - GET list (with search + status filters), POST create (User + Teacher transactional, bcrypt password hash, auto-generate TCH-2024-XXX ID)
+    52→    52→2. /api/teachers/[id]/route.ts - GET (with marks/assignments/attendance), PUT (owner or teacher.edit perm, syncs user table), DELETE (super_admin/admin only, removes user + teacher)
+    53→    53→3. /api/marks/route.ts - GET list (filters: studentId, teacherId, subjectId, term; includes student/subject/teacher), POST create (auto-computes grade via computeGrade helper: 90+=A+, 85+=A, 80+=B+, 75+=B, 65+=C+, 50+=C, else F; permission: mark.create)
+    54→    54→4. /api/marks/[id]/route.ts - GET, PUT (mark.edit; recomputes grade when score/total changes), DELETE (mark.delete)
+    55→    55→5. /api/attendance/route.ts - GET list (filters: studentId, teacherId, date, status; date filter uses gte/lt for full-day match), POST create (attendance.create)
+    56→    56→6. /api/attendance/[id]/route.ts - PUT (attendance.edit), DELETE (attendance.delete)
+    57→    57→7. /api/assignments/route.ts - GET list (filters: teacherId, subjectId, status; includes subject/teacher/submissions), POST create (assignment.create; auto-resolves teacherId from current user's teacher profile if not provided)
+    58→    58→8. /api/assignments/[id]/route.ts - GET (with submissions), PUT (assignment.edit), DELETE (assignment.delete)
+    59→    59→9. /api/submissions/route.ts - GET list (filters: assignmentId, studentId; students limited to own submissions), POST create (assignment.submit; students auto-bound to their studentId)
+    60→    60→10. /api/submissions/[id]/route.ts - PUT (assignment.edit; used for grading - score/feedback/status)
+    61→    61→11. /api/ranks/route.ts - GET (returns saved ranks if they exist, otherwise computes live from marks sorted by totalScore; supports term/academicYear/gradeId filters; Rank model has no student relation so student+grade data fetched separately and merged), POST (rank.create; upserts per student/term/year)
+    62→    62→12. /api/reports/route.ts - GET (report card: student + marks for term + computed totals/average + saved rank + live class rank by comparing to classmates + attendance summary; students restricted to own reports)
+    63→    63→13. /api/promotions/route.ts - GET list (filters: studentId, academicYear; includes student), POST create (promotion.create; optionally updates student's gradeId when promoted=true)
+    64→    64→14. /api/grades/route.ts - GET list with sections, subjects count, and active/total student counts, ordered by level
+    65→    65→15. /api/subjects/route.ts - GET list (filter: gradeId; includes grade info)
+    66→    66→
+    67→    67→Implementation Notes:
+    68→    68→- All routes use NextRequest/NextResponse, dynamic routes use `params: Promise<{ id: string }>` with await
+    69→    69→- All routes check auth via getCurrentUser() returning 401 on missing session
+    70→    70→- Permission checks via hasPermission(user.role, 'entity.action') returning 403 on failure
+    71→    71→- Teachers can edit their own profile (isOwner check) in addition to teacher.edit permission holders
+    72→    72→- Students are scope-limited to their own submissions and reports
+    73→    73→- Auto-grade calculation centralised in /api/marks/route.ts and exported as computeGrade for reuse in /api/marks/[id]/route.ts
+    74→    74→- All write operations wrapped in try/catch with structured error JSON responses
+    75→    75→- No schema modifications needed; worked around missing Rank.student relation by fetching students separately and merging
+    76→    76→- TypeScript check (npx tsc --noEmit) passes with zero errors in the new API route files (remaining pre-existing errors are confined to examples/, prisma/seed.ts, and skills/ — out of scope for this task)
+    77→    77→
+    78→    78→Stage Summary:
+    79→    79→- 15 academic API route files (20 handlers total) created and type-safe
+    80→    80→- Endpoints cover: teachers, marks (with auto-grading), attendance, assignments, submissions (with student scoping), ranks (live computation + saved), reports (with class rank + attendance summary), promotions, grades, subjects
+    81→    81→- Ready for frontend integration and Task 2-b (additional API routes / portal pages)
+    82→    82→
+    83→    83→---
+    84→    84→Task ID: 2-b
+    85→    85→Agent: Sub-agent (general-purpose)
+    86→    86→Task: Build admin/finance/CMS/library/HR/dashboard API routes for School Management System
+    87→    87→
+    88→    88→Work Log:
+    89→    89→- Read worklog, reference patterns (/api/students/route.ts and /api/students/[id]/route.ts), Prisma schema, and auth helpers (getCurrentUser, hasPermission, hashPassword, verifyPassword)
+    90→    90→- Created 28 API route files covering all admin/finance/CMS/library/HR/portal domains:
+    91→    91→
+    92→    92→1. /api/finance/route.ts - GET list (filters: studentId, type, category, paymentMethod, status; includes student), POST create (auto-generates TXN-2024-XXXX, permission finance.create)
+    93→    93→2. /api/finance/[id]/route.ts - GET, PUT (finance.edit), DELETE (finance.delete)
+    94→    94→3. /api/finance/summary/route.ts - GET summary (totalIncome, totalExpenses, totalFeeCollected, pendingPayments, countByPaymentMethod, 6-month monthly trend computed in-memory from rows)
+    95→    95→4. /api/books/route.ts - GET (filters: search across title/author/isbn/bookId, category, status; public), POST create (auto-generates BK-XXX, sets availableCopies=totalCopies, permission library.create)
+    96→    96→5. /api/books/[id]/route.ts - GET (with recent loans), PUT (library.edit; resyncs availableCopies when totalCopies changes), DELETE (library.delete)
+    97→    97→6. /api/loans/route.ts - GET list (filters: studentId, status; includes book, student), POST create (library.create; transactional - decrements book.availableCopies and updates book.status; auto-derives borrowerName from student)
+    98→    98→7. /api/loans/[id]/route.ts - PUT (library.edit; returning logic - sets returnDate/status='returned', increments availableCopies, computes fine = 5/day overdue; DELETE restores copy if loan wasn't returned)
+    99→    99→8. /api/cms/route.ts - GET list (public for published, super_admin sees all), POST upsert by slug (super_admin only)
+   100→   100→9. /api/cms/[slug]/route.ts - GET public (hides unpublished from non-super_admin), PUT/DELETE (super_admin only)
+   101→   101→10. /api/settings/route.ts - GET returns key-value object (public), PUT batch upsert (super_admin only)
+   102→   102→11. /api/social/route.ts - GET active links (public), POST create (super_admin only)
+   103→   103→12. /api/social/[id]/route.ts - PUT, DELETE (super_admin only)
+   104→   104→13. /api/media/route.ts - GET list (filters: type, category; public), POST create (super_admin only)
+   105→   105→14. /api/media/[id]/route.ts - PUT, DELETE (super_admin only)
+   106→   106→15. /api/contact/route.ts - GET list (admin/super_admin), POST public (creates contact message)
+   107→   107→16. /api/contact/[id]/route.ts - PUT update reply/status, sets repliedById (admin/super_admin)
+   108→   108→17. /api/registrations/route.ts - GET list (admin/super_admin), POST public (auto-generates APP-2024-XXX)
+   109→   109→18. /api/registrations/[id]/route.ts - PUT status (pending/approved/rejected/enrolled), sets reviewedBy/updatedAt; DELETE (admin/super_admin)
+   110→   110→19. /api/notifications/route.ts - GET list for current user (with unreadCount), POST create (admin/super_admin can target other users; others self-target)
+   111→   111→20. /api/notifications/[id]/route.ts - PUT mark as read (owner or admin)
+   112→   112→21. /api/events/route.ts - GET upcoming events (public, filter: type), POST create (super_admin/admin)
+   113→   113→22. /api/events/[id]/route.ts - PUT, DELETE (super_admin/admin)
+   114→   114→23. /api/idcards/route.ts - GET list (filter: personType), POST create (idcard.create; auto-generates IDC-YYYY-XXXX)
+   115→   115→24. /api/certificates/route.ts - GET list (students limited to own; filters: studentId, certificateType), POST create (certificate.create; auto-generates CERT-YYYY-XXXX)
+   116→   116→25. /api/hr/route.ts - GET list (hr.view or admin/super_admin; filters: department, status), POST create (hr.create; auto-generates HR-YYYY-XXXX if not provided)
+   117→   117→26. /api/hr/[id]/route.ts - PUT (hr.edit), DELETE (hr.delete)
+   118→   118→27. /api/dashboard/route.ts - GET role-aware dashboard stats:
+   119→   119→    - super_admin/admin: totalStudents, totalTeachers, totalBooks, totalTransactions, pendingApplications, revenue, recentActivities (merged from transactions+messages+applications sorted by date)
+   120→   120→    - teacher: totalStudents (distinct from marks), assignments, subjects, recentSubmissions
+   121→   121→    - student: marksSummary (count/totalScore/totalMax/average), attendancePercent, assignmentsDue, libraryLoans
+   122→   122→    - finance: revenue, expenses, pendingFees, recentTransactions
+   123→   123→    - library: totalBooks, totalCopies, availableCopies, borrowed, overdue
+   124→   124→28. /api/profile/route.ts - GET user + role-specific profile (student/teacher/financeStaff/librarian), PUT update name/phone/address/avatar and optional password change (verifies oldPassword, hashes newPassword); syncs name into role-specific table when changed
+   125→   125→
+   126→   126→Implementation Notes:
+   127→   127→- All routes use NextRequest/NextResponse, dynamic routes use `params: Promise<{ id: string | slug: string }>` with await
+   128→   128→- Auth checks via getCurrentUser() returning 401 on missing session; mutations additionally check hasPermission() or explicit role checks (`user.role === 'super_admin'` / `['super_admin','admin'].includes(user.role)`)
+   129→   129→- Public GET endpoints (books, cms, settings, social, media, events, contact POST, registrations POST) do not require auth; mutations strictly enforce auth + permission
+   130→   130→- Transaction IDs / card numbers / certificate numbers generated by counting existing rows and padding (TXN-2024-XXXX, BK-XXX, APP-2024-XXX, IDC-YYYY-XXXX, CERT-YYYY-XXXX, HR-YYYY-XXXX)
+   131→   131→- Finance summary computes monthly trend in-memory from a single query (last 6 months) rather than running 6 separate aggregates
+   132→   132→- Library loan create/return uses db.$transaction or paired updates to keep book.availableCopies in sync; DELETE loan restores copy if it wasn't returned
+   133→   133→- Certificate GET scope-limits students to their own certificates
+   134→   134→- Dashboard role branch fetches all required aggregates in parallel via Promise.all for performance
+   135→   135→- Profile update verifies oldPassword before applying newPassword (bcrypt via auth helpers) and propagates name changes to role-specific tables
+   136→   136→- TypeScript check (npx tsc --noEmit) passes with zero errors in all new API route files (remaining pre-existing errors are confined to examples/, prisma/seed.ts, and skills/ — out of scope)
+   137→   137→- One issue caught and fixed during type-check: ContactMessage schema has no reviewedAt field (only updatedAt auto-managed) — removed the assignment in /api/contact/[id]/route.ts
+   138→   138→
+   139→   139→Stage Summary:
+   140→   140→- 28 API route files (60+ handlers) created and type-safe
+   141→   141→- Full coverage of admin/finance/library/CMS/HR/portal/notification/dashboard domains
+   142→   142→- Public-facing endpoints (CMS, settings, social, media, events, contact, registrations) support anonymous access while mutations are tightly permissioned
+   143→   143→- Ready for frontend portal pages and Task 2-c+ integration
+   144→   144→
+   145→   145→---
+   146→   146→Task ID: 6
+   147→   147→Agent: Sub-agent (general-purpose)
+   148→   148→Task: Build the Public Website frontend for the School Management System
+   149→   149→
+   150→   150→Work Log:
+   151→   151→- Read existing worklog, Zustand store (@/lib/store), key API routes (settings, social, events, media, teachers, students, cms/[slug], registrations, contact), Prisma schema, and seed data to understand data shapes and existing patterns
+   152→   152→- Verified useToast lives at @/hooks/use-toast (toaster.tsx uses this path), confirmed framer-motion, lucide-react, and all needed shadcn/ui components are installed
+   153→   153→- Created 11 files under src/components/public/:
+   154→   154→
+   155→   155→1. PublicHeader.tsx - Sticky header with logo + school name (fetched from /api/settings, fallback to Bright Future Academy), 8-item nav (Home, About Us, Academy, Admissions, Media dropdown, Teachers, Students, Contact Us), "Portal Login" CTA calling navigateToLogin(), and a shadcn Sheet-based mobile hamburger menu. Teal/emerald color scheme with scroll-triggered shadow, smooth scroll-to-top on nav.
+   156→   156→
+   157→   157→2. PublicFooter.tsx - Dark footer with 4 columns (school info + social icons from /api/social with lucide icons + graceful fallback when no links, quick links, programs, contact info with mt-auto wrapper for sticky-bottom). Footer text from settings.footer_text.
+   158→   158→
+   159→   159→3. pages/HomePage.tsx - Landing page with hero (gradient + Unsplash bg + wave divider), 4 stats cards (2000+ / 50+ / 19+ / 25+), about preview, 3 academic program cards (Primary/Junior/Secondary), upcoming events fetched from /api/events (3 cards with date badge), featured photo gallery (6 from /api/media?type=photo with Unsplash fallback), highlights strip, and admissions CTA. All sections use framer-motion fade-in/slide-up.
+   160→   160→
+   161→   161→4. pages/AboutPage.tsx - Fetches CMS page 'about' from /api/cms/about (with fallback content), banner hero, intro content rendered with simple markdown-style line breaks, Mission/Vision cards, 4 Values cards (Integrity/Excellence/Respect/Service), zig-zag school history timeline (2005→2023, 5 milestones), leadership team (4 members with dicebear initials avatars), parent testimonial card, and CTA.
+   162→   162→
+   163→   163→5. pages/AcademyPage.tsx - Fetches CMS 'academy', banner hero, intro content, 3 academic program cards with gradient headers + highlight checklists, 10 subjects grid with icons, 3-term calendar cards, 6 facilities cards with icons, and CTA.
+   164→   164→
+   165→   165→6. pages/AdmissionsPage.tsx - Fetches CMS 'admissions', banner hero, intro, 4-step admission process (Submit→Review→Assessment→Enrollment), requirements checklist card, side info cards (intake + phone), and comprehensive online application form (firstName, lastName, gender, dateOfBirth, desiredGrade, guardianName, guardianPhone, guardianEmail, address, previousSchool) POSTing to /api/registrations. Success toast shows application ID. Uses Select for gender/grade, Input/Textarea with leading icons, loading spinner on submit button.
+   166→   166→
+   167→   167→7. pages/MediaPage.tsx - Props type: 'photo' | 'video'. Fetches /api/media?type=${type} with placeholder fallback arrays (6 photos, 4 videos) when API returns empty or errors. Category filter tabs (all/event/sports/graduation/classroom/general). Photos: square grid with hover overlay + Dialog lightbox with prev/next nav + counter. Videos: 16:9 grid with play button overlay, opens Dialog with iframe (supports YouTube watch/embed/youtu.be URLs - extracted via regex). Component keyed by type in PublicSite for clean remounts.
+   168→   168→
+   169→   169→8. pages/TeachersPage.tsx - Fetches /api/teachers; since this endpoint requires auth (returns 401 for anonymous public users), gracefully falls back to 8 demo teachers and shows a friendly "log in to see full directory" notice. Cards grid with avatar (photoUrl or dicebear initials), name, specialization, experience + teacherId badges, qualification, contact info. Live search filters by name/subject/qualification/teacherId.
+   170→   170→
+   171→   171→9. pages/StudentsPage.tsx - Privacy-focused: shows achievements (4 award cards: Science Olympiad, Debate, Art, Athletics), 4 top performers (last names abbreviated), 6-member Student Council grid with role badges, 3 grade-level overview cards, 8 student activities grid, and a count banner fetching /api/students with graceful fallback to "2,000+" when 401 (since endpoint requires auth). No personal student data is displayed.
+   172→   172→
+   173→   173→10. pages/ContactPage.tsx - Fetches CMS 'contact' for content + /api/settings for school_address/phone/email/hours. 4 info cards (Visit/Call/Email/Hours) with gradient icon badges and action links. Contact form (name, email, phone, subject, message) POSTing to /api/contact with success toast. OpenStreetMap iframe embed (no API key required). CTA section.
+   174→   174→
+   175→   175→11. PublicSite.tsx - Wrapper component: renders PublicHeader, switches on publicPage from store to render the appropriate page (MediaPage keyed by type for clean remounts), and renders PublicFooter. Wrapped in min-h-screen flex flex-col with main flex-1 and footer mt-auto for sticky-bottom behavior. Scrolls to top on page change.
+   176→   176→
+   177→   177→- Updated src/app/page.tsx to render <PublicSite /> (currently always since login/portal are wired up by other agents; uses store.view conditional for future extension)
+   178→   178→
+   179→   179→Design system:
+   180→   180→- Teal/emerald color scheme throughout (bg-teal-600, text-teal-600, from-teal-500 to-emerald-600 gradients)
+   181→   181→- NO indigo or blue colors used anywhere
+   182→   182→- White background with gray-50/teal-50 accent surfaces
+   183→   183→- Consistent hero pattern across pages: gradient banner + Unsplash bg + wave SVG divider
+   184→   184→- Framer-motion fade-in/slide-up animations on scroll (fadeIn variant)
+   185→   185→- Responsive: mobile-first with sm:/md:/lg: breakpoints, hamburger Sheet for mobile nav
+   186→   186→- shadcn/ui components used: Button, Card, Badge, Input, Textarea, Label, Select, Sheet, DropdownMenu, Dialog, Avatar, Toaster (via useToast)
+   187→   187→
+   188→   188→Implementation Notes:
+   189→   189→- All fetch calls have .catch() fallbacks so the UI never breaks if an endpoint fails
+   190→   190→- TeachersPage and StudentsPage handle the /api/teachers and /api/students 401 (auth required) by falling back to demo data / displayed numbers — graceful degradation for anonymous visitors while inviting them to log in
+   191→   191→- MediaPage uses key prop in PublicSite to ensure clean remount when switching photo↔video, avoiding stale state
+   192→   192→- MediaPage useEffect uses a cancelled flag pattern (no synchronous setState) to satisfy react-hooks/set-state-in-effect rule
+   193→   193→- Removed all unused eslint-disable @next/next/no-img-element directives (rule not enabled in this project)
+   194→   194→- Forms validate required fields client-side before POST, show destructive toast on missing fields, and success toast on completion
+   195→   195→- DateOfBirth and date inputs use native date picker
+   196→   196→- All images use Unsplash URLs or dicebear initials API for avatars
+   197→   197→- All icons from lucide-react
+   198→   198→
+   199→   199→Verification:
+   200→   200→- `bun run lint` passes with ZERO errors and ZERO warnings (fixed initial 1 error + 5 warnings)
+   201→   201→- `npx tsc --noEmit` passes (filtered out unrelated examples/seed/skills errors)
+   202→   202→- Dev server log shows / returning 200 and all API endpoints (settings, social, events, media) returning 200 with Prisma queries executing successfully
+   203→   203→
+   204→   204→Stage Summary:
+   205→   205→- Public website is fully functional and visually polished across 9 pages
+   206→   206→- All 11 component files created in src/components/public/ (8 pages + header + footer + site wrapper)
+   207→   207→- Teal/emerald theme, responsive, accessible, animated
+   208→   208→- Wired into src/app/page.tsx so the public site is immediately visible in the preview
+   209→   209→- Ready for integration with login (Task 5) and portal (other tasks) via store.view conditional
+   210→   210→
+   211→   211→---
+   212→   212→Task ID: 10
+   213→   213→Agent: Sub-agent (general-purpose)
+   214→   214→Task: Build 14 portal module components for School Management System
+   215→   215→
+   216→   216→Work Log:
+   217→   217→- Read worklog, StudentsModule.tsx + DashboardModule.tsx (reference patterns), use-api/store/auth helpers, Prisma schema, and 15+ API route files to understand data shapes
+   218→   218→- Discovered existing bug: StudentsModule imports `useToast` from `@/components/ui/use-toast` but file did not exist (actual hook at `@/hooks/use-toast`). Created `src/components/ui/use-toast.ts` re-export so existing StudentsModule + LoginPage + PortalLayout import resolves, and my new modules can use the same path the task spec requires.
+   219→   219→- Created 14 'use client' React components in `src/components/portal/modules/`, each exported as a named export, all following the StudentsModule CRUD pattern (Card, Table, Dialog, AlertDialog, useApi/apiPost/apiPut/apiDelete, useToast, hasPermission, Skeleton loaders, empty states, teal/emerald theme, framer-motion subtle animations, responsive):
+   220→   220→
+   221→   221→1. TeachersModule.tsx — Teacher management: stats (total/active/male/female), search by name/teacherId, specialization filter (12 specializations), table (avatar, name, teacherId, specialization, qualification, experience, phone, status), full create/edit form (email/password/firstName/lastName/gender/qualification/specialization/experience/phone/address/salary), view dialog with all details, delete confirm. Permissions: teacher.create, teacher.edit, super_admin for delete. Uses broadcastDataUpdate after mutations.
+   222→   222→
+   223→   223→2. MarksModule.tsx — Role-aware: STUDENTS see their own marks (API auto-filters via student profile), with average/total/subjects stats, performance bar chart by subject (animated gradient bars), and marks table (subject/term/assessment/score/grade). TEACHERS/ADMINS see full CRUD: filters (term/subject), marks table with student name + grade badges, create/edit form (student/subject/term/assessment type/score/total) with LIVE computed grade preview + percentage, delete. Uses local computeGrade() matching backend logic (90+=A+, 85+=A, 80+=B+, 75+=B, 65+=C+, 50+=C, else F). Permissions: mark.view for students, mark.create/edit/delete for staff.
+   224→   224→
+   225→   225→3. AttendanceModule.tsx — Role-aware: STUDENTS see their own attendance with present/absent/late/excused stats, overall percentage progress bar, filters (date/status), and history table. TEACHERS/ADMINS get a "Mark Attendance" section: select grade + date, then for each student pick present/absent/late/excused via color-coded P/A/L/E buttons (green/red/amber/blue), with count tracker and Save Attendance button (Promise.all posts each entry). Plus stats, filters, and records table with delete. Permissions: attendance.view for students, attendance.create/edit/delete for staff.
+   226→   226→
+   227→   227→4. AssignmentsModule.tsx — Role-aware card grid (responsive 1/2/3 cols): STUDENTS see assignment cards with title/subject/due date/status/overdue badge, "Submitted" badge if they've submitted (with score if graded), Submit button (disabled if submitted/overdue) opens dialog with Textarea for content (POST /api/submissions). TEACHERS/ADMINS see full CRUD: New Assignment button, cards with View/Edit/Delete actions, View dialog shows all submissions for the assignment with Grade/Re-grade buttons opening a grading dialog (score/feedback/status). Create/edit form: title/description/subject/dueDate/maxScore/status. Permissions: assignment.submit for students, assignment.create/edit/delete for staff, assignment.edit for grading.
+   228→   228→
+   229→   229→5. RanksModule.tsx — Role-aware: STUDENTS see their own rank in a hero card with gradient podium background (gold/silver/bronze), rank #, total score, average. TEACHERS/ADMINS see term/year/grade filters, podium for top 3 (gold/silver/bronze gradients with Crown/Medal/Award icons, 1st place elevated), and full ranking table with rank badges, student info, grade, total, average. Save Ranks button (POSTs each rank) only shows if ranks are computed live (not saved). Notes computed-vs-saved status. Permissions: rank.view for students, rank.create for staff.
+   230→   230→
+   231→   231→6. ReportsModule.tsx — Role-aware report card with print support: STUDENTS auto-load their own report (uses /api/profile to get studentId), with term selector and Print button. TEACHERS/ADMINS pick student + term + year then generate. Beautiful ReportCardView component: gradient header (teal/emerald), student info (avatar, name, ID, grade, section), academic performance marks table, 4 summary stats (Total/Average/Class Rank/Attendance %) with colored backgrounds, attendance summary (present/absent/late/excused), remarks textarea, signature lines (Class Teacher / Principal), generation date. Print button uses window.print(). Permissions: report.view.
+   232→   232→
+   233→   233→7. PromotionsModule.tsx — Role-aware: STUDENTS see their own promotion history (API filtered by their studentId via /api/profile). TEACHERS/ADMINS see stats (total/promoted/retained), year filter, full history table (student/from/to/year/status/remarks), and create form (select student, from grade, to grade, year, promoted/retained toggle, remarks). POST /api/promotions. Permissions: promotion.create.
+   234→   234→
+   235→   235→8. IdCardsModule.tsx — ID card generation: stats (total/active/student/teacher), type filter (student/teacher/staff), grid of ID card visuals (gradient header with school name + icon, photo placeholder, name, person type badge, card number, issued/expiry dates, status, Print button). Create form: person type selector (student/teacher/staff), person selector (students/teachers loaded from API, staff uses manual name input), optional expiry date. Print preview dialog with detailed card layout. POST /api/idcards. Permissions: idcard.create.
+   236→   236→
+   237→   237→9. CertificatesModule.tsx — Certificate generation: type filter (completion/achievement/transfer/graduation), grid of certificate cards with type color badges, student name, cert number, issue date, signed by, Preview & Print button. Create form: student selector (optional), student name, certificate type, signed by, title, description. Beautiful preview dialog with double-border teal frame, gradient background, school seal icon, certificate title, student name with underline, description, certificate number, signature/date/seal layout. POST /api/certificates. Permissions: certificate.create.
+   238→   238→
+   239→   239→10. HrModule.tsx — HR staff management: stats (total/active/departments/total payroll), search (name/ID/position), department + status filters, table (staff ID, name, department, position, contact, salary, status, actions), create/edit form (firstName/lastName/gender/department/position/phone/email/salary). 10 departments. Permissions: hr.create/edit/delete.
+   240→   240→
+   241→   241→11. RegistrationsModule.tsx — Admission applications: 4 stats cards (Total/Pending/Approved/Enrolled) with icons, status filter, table (app ID/applicant/desired grade/guardian/phone/submitted date/status/actions), view dialog with full application details, inline Approve/Reject buttons for pending apps, Enroll button for approved apps, action dialog with remarks textarea. Statuses: pending/approved/rejected/enrolled with color-coded badges. DELETE for cleanup. Permissions: admin/super_admin only.
+   242→   242→
+   243→   243→12. MessagesModule.tsx — Contact messages: 3 stats (New/Replied/Closed), status filter, table (name/email/subject/status/date/actions) with new messages highlighted in blue, view+reply dialog showing full message + previous reply + reply textarea + status selector. Auto-marks new messages as "read" when opened. POST reply via PUT /api/contact/[id]. Statuses: new/read/replied/closed.
+   244→   244→
+   245→   245→13. EventsModule.tsx — Events management: type filter (event/holiday/exam/meeting), events grouped by month with month headers, event cards (date badge with day/month, title, type badge, description, time + location, edit/delete for admins). Past events dimmed. Create/edit form: title/date+time/type/location/description. Uses `?upcoming=false` to show ALL events. Permissions: super_admin/admin for create/edit/delete.
+   246→   246→
+   247→   247→14. ProfileModule.tsx — Edit own profile: profile header card (gradient with avatar, name, email, role badge, active badge), role-specific info grid (student: studentId/grade/section/enrolled; teacher: teacherId/specialization/qualification/joined; finance/library: staffId), Tabs component with two tabs: "Profile Info" (name/email[readonly]/phone/avatar URL/address with leading icons) and "Change Password" (current/new/confirm password with validation: min 6 chars, match check). On profile save, updates Zustand store user object. Account meta footer (member since, last login). GET/PUT /api/profile.
+   248→   248→
+   249→   249→Implementation Notes:
+   250→   250→- All 14 files start with 'use client' and use named exports (e.g., `export function TeachersModule()`)
+   251→   251→- All use the same CRUD pattern as StudentsModule: useApi for fetching, apiPost/apiPut/apiDelete for mutations, refetch() after success, useToast for notifications, AlertDialog for delete confirmation
+   252→   252→- All call `broadcastDataUpdate(entity, action)` after mutations to push real-time updates via WebSocket
+   253→   253→- Loading states use Skeleton components (multiple bars for tables, single for cards)
+   254→   254→- Empty states use Lucide icons + gray text messaging
+   255→   255→- All permissions checked via hasPermission(role, 'entity.action')
+   256→   256→- Students auto-discover their studentId via GET /api/profile (MarksModule, AttendanceModule, AssignmentsModule, RanksModule, ReportsModule, PromotionsModule, CertificatesModule)
+   257→   257→- Teal/emerald color scheme throughout (bg-teal-700, from-teal-700 to-emerald-800 gradients, teal-50/teal-100 accents)
+   258→   258→- NO indigo or blue (only blue used is for "excused" attendance status and "new" message status — semantic, not primary)
+   259→   259→- Responsive: grid-cols-1 sm:grid-cols-2 md:grid-cols-3/4 lg breakpoints, mobile-friendly dialogs with max-h-[90vh] overflow-y-auto
+   260→   260→- framer-motion: subtle fade-in/slide-up on cards (initial opacity 0 y 10, animate to 1/0, staggered delays)
+   261→   261→- Print support: ReportsModule, IdCardsModule, CertificatesModule use `no-print` class on controls + window.print()
+   262→   262→- MarksModule has live grade preview that recomputes on score/total change
+   263→   263→- AttendanceModule color-codes status buttons (green=present, red=absent, amber=late, blue=excused)
+   264→   264→- ReportsModule includes signature lines, attendance summary, remarks, and class rank computation
+   265→   265→- IdCardsModule and CertificatesModule have beautifully designed print-preview cards with gradient headers, seals, signature lines
+   266→   266→- RanksModule has podium display with elevated 1st place, gold/silver/bronze gradients and Crown/Medal/Award icons
+   267→   267→
+   268→   268→Verification:
+   269→   269→- `npx tsc --noEmit` shows ZERO errors in any of the 14 new module files or the use-toast re-export (remaining errors are pre-existing in examples/, prisma/seed.ts, skills/, and PortalShell.tsx for 4 modules outside this task's scope: FinanceModule, LibraryModule, WebsiteCmsModule, WebsiteSettingsModule)
+   270→   270→- `bun run lint` shows ZERO errors in any new file (3 pre-existing errors in PortalLayout.tsx and use-api.ts, both outside this task's scope)
+   271→   271→- All modules properly imported by PortalShell.tsx (which already had stub imports for them)
+   272→   272→
+   273→   273→Stage Summary:
+   274→   274→- 14 complete, functional, role-aware portal module components created (plus 1 use-toast re-export to fix existing import path bug)
+   275→   275→- All follow StudentsModule CRUD patterns and integrate with existing API routes from Tasks 2-a and 2-b
+   276→   276→- Teal/emerald themed, responsive, animated, with proper loading/empty states and permission checks
+   277→   277→- Role-awareness implemented for student vs teacher/admin views in Marks, Attendance, Assignments, Ranks, Reports, Promotions, Certificates
+   278→   278→- Print-ready layouts for Reports, ID Cards, and Certificates
+   279→   279→- Ready for end-to-end testing once the 4 outstanding modules (Finance, Library, WebsiteCms, WebsiteSettings) are built by other agents
+   280→   280→

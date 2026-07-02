@@ -1,0 +1,289 @@
+'use client'
+
+import { useState } from 'react'
+import { useAppStore, UserRole } from '@/lib/store'
+import { ROLE_MODULES, ROLE_LABELS, ROLE_COLORS } from '@/lib/nav-config'
+import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import { Sheet, SheetContent } from '@/components/ui/sheet'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import {
+  GraduationCap, Menu, LogOut, Bell, Globe, ChevronDown,
+  User, Home
+} from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { useWebSocket } from '@/lib/use-websocket'
+import { useToast } from '@/components/ui/use-toast'
+import { cn } from '@/lib/utils'
+
+interface PortalLayoutProps {
+  children: React.ReactNode
+}
+
+interface SidebarContentProps {
+  user: { name: string; role: string; email: string }
+  modules: { id: string; label: string; icon: any }[]
+  currentModuleId: string
+  onNavigate: (moduleId: string) => void
+  onViewWebsite: () => void
+  onLogout: () => void
+}
+
+function SidebarContent({ user, modules, currentModuleId, onNavigate, onViewWebsite, onLogout }: SidebarContentProps) {
+  const initials = user.name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Logo */}
+      <div className="flex items-center gap-2 px-6 py-5 border-b">
+        <div className="h-10 w-10 rounded-lg bg-teal-700 flex items-center justify-center">
+          <GraduationCap className="h-6 w-6 text-white" />
+        </div>
+        <div>
+          <h1 className="font-bold text-sm text-gray-900">Bright Future</h1>
+          <p className="text-xs text-gray-500">Academy Portal</p>
+        </div>
+      </div>
+
+      {/* User info */}
+      <div className="px-4 py-4 border-b">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-10 w-10">
+            <AvatarFallback className={cn('text-white font-semibold', ROLE_COLORS[user.role as UserRole])}>
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold truncate">{user.name}</p>
+            <Badge variant="secondary" className="text-xs">
+              {ROLE_LABELS[user.role as UserRole]}
+            </Badge>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <ScrollArea className="flex-1 px-3 py-3">
+        <nav className="space-y-1">
+          {modules.map((module) => {
+            const Icon = module.icon
+            const isActive = currentModuleId === module.id
+            return (
+              <button
+                key={module.id}
+                onClick={() => onNavigate(module.id)}
+                className={cn(
+                  'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-teal-700 text-white shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                )}
+              >
+                <Icon className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{module.label}</span>
+              </button>
+            )
+          })}
+        </nav>
+      </ScrollArea>
+
+      {/* Footer */}
+      <div className="px-4 py-3 border-t space-y-1">
+        <button
+          onClick={onViewWebsite}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+        >
+          <Globe className="h-4 w-4" />
+          View Website
+        </button>
+        <button
+          onClick={onLogout}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+        >
+          <LogOut className="h-4 w-4" />
+          Logout
+        </button>
+      </div>
+    </div>
+  )
+}
+
+export function PortalLayout({ children }: PortalLayoutProps) {
+  const { user, portalModule, setPortalModule, logout, navigateToPublic } = useAppStore()
+  const { connected, onlineCount, notifications, clearNotifications } = useWebSocket()
+  const { toast } = useToast()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  if (!user) return null
+
+  const modules = ROLE_MODULES[user.role as UserRole] || []
+  const currentModule = modules.find((m) => m.id === portalModule) || modules[0]
+
+  const initials = user.name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+
+  const handleNavigate = (moduleId: string) => {
+    setPortalModule(moduleId)
+    setSidebarOpen(false)
+  }
+
+  const handleLogout = () => {
+    logout()
+    toast({ title: 'Logged out', description: 'You have been signed out' })
+  }
+
+  const sidebarProps = {
+    user: { name: user.name, role: user.role, email: user.email },
+    modules,
+    currentModuleId: currentModule?.id || 'dashboard',
+    onNavigate: handleNavigate,
+    onViewWebsite: () => navigateToPublic('home'),
+    onLogout: handleLogout,
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex w-64 bg-white border-r flex-col fixed inset-y-0 left-0 z-30">
+        <SidebarContent {...sidebarProps} />
+      </aside>
+
+      {/* Mobile Sidebar */}
+      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+        <SheetContent side="left" className="w-64 p-0">
+          <SidebarContent {...sidebarProps} />
+        </SheetContent>
+      </Sheet>
+
+      {/* Main Content */}
+      <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
+        {/* Top Header */}
+        <header className="h-16 bg-white border-b flex items-center justify-between px-4 lg:px-6 sticky top-0 z-20">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">{currentModule?.label || 'Dashboard'}</h2>
+              <p className="text-xs text-gray-500 hidden sm:block">
+                {ROLE_LABELS[user.role as UserRole]} Portal
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Online indicator */}
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 border border-green-200">
+              <div className={cn('h-2 w-2 rounded-full', connected ? 'bg-green-500 animate-pulse' : 'bg-gray-400')} />
+              <span className="text-xs font-medium text-green-700">{onlineCount} online</span>
+            </div>
+
+            {/* Notifications */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell className="h-5 w-5" />
+                  {notifications.length > 0 && (
+                    <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">
+                      {notifications.length}
+                    </span>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80">
+                <DropdownMenuLabel className="flex items-center justify-between">
+                  Notifications
+                  {notifications.length > 0 && (
+                    <button onClick={clearNotifications} className="text-xs text-teal-600 hover:underline">
+                      Clear all
+                    </button>
+                  )}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {notifications.length === 0 ? (
+                  <div className="py-6 text-center text-sm text-gray-500">
+                    No new notifications
+                  </div>
+                ) : (
+                  notifications.slice(0, 10).map((notif) => (
+                    <DropdownMenuItem key={notif.id} className="flex-col items-start py-2">
+                      <p className="text-sm font-medium">{notif.title}</p>
+                      <p className="text-xs text-gray-500">{notif.message}</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {new Date(notif.timestamp).toLocaleTimeString()}
+                      </p>
+                    </DropdownMenuItem>
+                  ))
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* User menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-2 hover:bg-gray-100">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className={cn('text-white text-xs', ROLE_COLORS[user.role as UserRole])}>
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <ChevronDown className="h-4 w-4 text-gray-400 hidden sm:block" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <p className="font-semibold">{user.name}</p>
+                  <p className="text-xs text-gray-500 font-normal">{user.email}</p>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setPortalModule('profile')}>
+                  <User className="h-4 w-4 mr-2" />
+                  My Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigateToPublic('home')}>
+                  <Home className="h-4 w-4 mr-2" />
+                  View Website
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="text-red-600"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <main className="flex-1 p-4 lg:p-6">
+          {children}
+        </main>
+      </div>
+    </div>
+  )
+}

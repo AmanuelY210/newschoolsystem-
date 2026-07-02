@@ -20,6 +20,7 @@ import {
   Save, ShieldAlert, Building2, Image as ImageIcon, PanelTop,
   Search, Facebook, Twitter, Instagram, Youtube, Linkedin, Send,
   Plus, Edit, Trash2, ExternalLink, Globe, Palette,
+  GraduationCap, Hash, IdCard, CreditCard, FileText,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -55,6 +56,18 @@ const GENERAL_KEYS = ['school_name', 'school_address', 'school_phone', 'school_e
 const BRANDING_KEYS = ['logo_url', 'favicon_url']
 const HEADER_FOOTER_KEYS = ['header_text', 'footer_text']
 const SEO_KEYS = ['seo_title', 'seo_description', 'seo_keywords']
+const ADMISSION_KEYS = [
+  'admission_prefix',
+  'admission_year',
+  'admission_padding',
+  'admission_start_number',
+  'student_id_prefix',
+  'student_id_padding',
+  'application_id_prefix',
+  'tracking_prefix',
+  'admission_fee_amount',
+  'admission_default_password',
+]
 
 export function WebsiteSettingsModule() {
   const { user } = useAppStore()
@@ -73,6 +86,7 @@ export function WebsiteSettingsModule() {
   const [brandingForm, setBrandingForm] = useState<Record<string, string>>({})
   const [headerFooterForm, setHeaderFooterForm] = useState<Record<string, string>>({})
   const [seoForm, setSeoForm] = useState<Record<string, string>>({})
+  const [admissionForm, setAdmissionForm] = useState<Record<string, string>>({})
   const [savingTab, setSavingTab] = useState<string | null>(null)
 
   // Hydrate local forms when settings load
@@ -82,6 +96,18 @@ export function WebsiteSettingsModule() {
       setBrandingForm(BRANDING_KEYS.reduce((acc, k) => ({ ...acc, [k]: settings[k] || '' }), {}))
       setHeaderFooterForm(HEADER_FOOTER_KEYS.reduce((acc, k) => ({ ...acc, [k]: settings[k] || '' }), {}))
       setSeoForm(SEO_KEYS.reduce((acc, k) => ({ ...acc, [k]: settings[k] || '' }), {}))
+      setAdmissionForm({
+        admission_prefix: settings.admission_prefix || 'ADM',
+        admission_year: settings.admission_year || String(new Date().getFullYear()),
+        admission_padding: settings.admission_padding || '3',
+        admission_start_number: settings.admission_start_number || '1',
+        student_id_prefix: settings.student_id_prefix || 'STU',
+        student_id_padding: settings.student_id_padding || '3',
+        application_id_prefix: settings.application_id_prefix || 'APP',
+        tracking_prefix: settings.tracking_prefix || 'TRK',
+        admission_fee_amount: settings.admission_fee_amount || '500',
+        admission_default_password: settings.admission_default_password || 'password123',
+      })
     }
   }, [loading, settings])
 
@@ -176,7 +202,7 @@ export function WebsiteSettingsModule() {
         </div>
       ) : (
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="grid w-full sm:w-auto grid-cols-2 sm:grid-cols-5 h-auto">
+          <TabsList className="grid w-full sm:w-auto grid-cols-2 sm:grid-cols-6 h-auto">
             <TabsTrigger value="general" className="gap-2">
               <Building2 className="h-4 w-4" />
               <span className="hidden sm:inline">General</span>
@@ -192,6 +218,10 @@ export function WebsiteSettingsModule() {
             <TabsTrigger value="seo" className="gap-2">
               <Search className="h-4 w-4" />
               <span className="hidden sm:inline">SEO</span>
+            </TabsTrigger>
+            <TabsTrigger value="admission" className="gap-2">
+              <GraduationCap className="h-4 w-4" />
+              <span className="hidden sm:inline">Admission</span>
             </TabsTrigger>
             <TabsTrigger value="social" className="gap-2">
               <Globe className="h-4 w-4" />
@@ -428,6 +458,191 @@ export function WebsiteSettingsModule() {
                   <Button onClick={() => saveTab('seo', seoForm)} disabled={savingTab === 'seo'} className="bg-teal-700 hover:bg-teal-800">
                     <Save className="h-4 w-4 mr-2" />
                     {savingTab === 'seo' ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ===== ADMISSION TAB ===== */}
+          <TabsContent value="admission" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <GraduationCap className="h-5 w-5 text-teal-600" />
+                  Admission Number Configuration
+                </CardTitle>
+                <CardDescription>
+                  Customize how admission numbers, student IDs, application IDs, and tracking numbers are generated when students apply and enroll
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Admission Number Section */}
+                <div className="space-y-4 p-4 bg-teal-50/50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Hash className="h-4 w-4 text-teal-600" />
+                    <h4 className="font-semibold text-gray-900">Admission Number Format</h4>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Generated when a student is enrolled. Format: <code className="bg-white px-1.5 py-0.5 rounded text-teal-700 font-mono">PREFIX-YEAR-NUMBER</code>
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <Label>Prefix</Label>
+                      <Input
+                        value={admissionForm.admission_prefix || ''}
+                        onChange={(e) => setAdmissionForm({ ...admissionForm, admission_prefix: e.target.value.toUpperCase() })}
+                        placeholder="ADM"
+                        className="font-mono"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Year</Label>
+                      <Input
+                        value={admissionForm.admission_year || ''}
+                        onChange={(e) => setAdmissionForm({ ...admissionForm, admission_year: e.target.value })}
+                        placeholder="2026"
+                        className="font-mono"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Number Padding</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="6"
+                        value={admissionForm.admission_padding || ''}
+                        onChange={(e) => setAdmissionForm({ ...admissionForm, admission_padding: e.target.value })}
+                        placeholder="3"
+                      />
+                      <p className="text-xs text-gray-400">e.g., 3 = 001</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Start Number</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={admissionForm.admission_start_number || ''}
+                        onChange={(e) => setAdmissionForm({ ...admissionForm, admission_start_number: e.target.value })}
+                        placeholder="1"
+                      />
+                    </div>
+                  </div>
+                  {/* Live Preview */}
+                  <div className="flex items-center gap-2 p-3 bg-white rounded-lg border">
+                    <span className="text-sm text-gray-500">Preview:</span>
+                    <code className="text-lg font-bold text-teal-700 font-mono">
+                      {admissionForm.admission_prefix || 'ADM'}-{admissionForm.admission_year || '2026'}-
+                      {String(parseInt(admissionForm.admission_start_number || '1')).padStart(parseInt(admissionForm.admission_padding || '3'), '0')}
+                    </code>
+                  </div>
+                </div>
+
+                {/* Student ID Section */}
+                <div className="space-y-4 p-4 bg-blue-50/50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <IdCard className="h-4 w-4 text-blue-600" />
+                    <h4 className="font-semibold text-gray-900">Student ID Format</h4>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Generated for each enrolled student. Format: <code className="bg-white px-1.5 py-0.5 rounded text-blue-700 font-mono">PREFIX-YEAR-NUMBER</code>
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label>Prefix</Label>
+                      <Input
+                        value={admissionForm.student_id_prefix || ''}
+                        onChange={(e) => setAdmissionForm({ ...admissionForm, student_id_prefix: e.target.value.toUpperCase() })}
+                        placeholder="STU"
+                        className="font-mono"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Number Padding</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="6"
+                        value={admissionForm.student_id_padding || ''}
+                        onChange={(e) => setAdmissionForm({ ...admissionForm, student_id_padding: e.target.value })}
+                        placeholder="3"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Preview</Label>
+                      <div className="h-10 flex items-center">
+                        <code className="text-sm font-bold text-blue-700 font-mono">
+                          {admissionForm.student_id_prefix || 'STU'}-{admissionForm.admission_year || '2026'}-
+                          {String(parseInt(admissionForm.admission_start_number || '1')).padStart(parseInt(admissionForm.student_id_padding || '3'), '0')}
+                        </code>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Application & Tracking IDs */}
+                <div className="space-y-4 p-4 bg-purple-50/50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-purple-600" />
+                    <h4 className="font-semibold text-gray-900">Application & Tracking Number Prefixes</h4>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Application ID Prefix</Label>
+                      <Input
+                        value={admissionForm.application_id_prefix || ''}
+                        onChange={(e) => setAdmissionForm({ ...admissionForm, application_id_prefix: e.target.value.toUpperCase() })}
+                        placeholder="APP"
+                        className="font-mono"
+                      />
+                      <p className="text-xs text-gray-400">Preview: {admissionForm.application_id_prefix || 'APP'}-{admissionForm.admission_year || '2026'}-001</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Tracking Number Prefix</Label>
+                      <Input
+                        value={admissionForm.tracking_prefix || ''}
+                        onChange={(e) => setAdmissionForm({ ...admissionForm, tracking_prefix: e.target.value.toUpperCase() })}
+                        placeholder="TRK"
+                        className="font-mono"
+                      />
+                      <p className="text-xs text-gray-400">Preview: {admissionForm.tracking_prefix || 'TRK'}-{admissionForm.admission_year || '2026'}-XXXXXX</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment & Account Settings */}
+                <div className="space-y-4 p-4 bg-amber-50/50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4 text-amber-600" />
+                    <h4 className="font-semibold text-gray-900">Payment & Account Defaults</h4>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Admission Processing Fee (ETB)</Label>
+                      <Input
+                        type="number"
+                        value={admissionForm.admission_fee_amount || ''}
+                        onChange={(e) => setAdmissionForm({ ...admissionForm, admission_fee_amount: e.target.value })}
+                        placeholder="500"
+                      />
+                      <p className="text-xs text-gray-400">Default fee shown on the payment step</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Default Student Password</Label>
+                      <Input
+                        value={admissionForm.admission_default_password || ''}
+                        onChange={(e) => setAdmissionForm({ ...admissionForm, admission_default_password: e.target.value })}
+                        placeholder="password123"
+                      />
+                      <p className="text-xs text-gray-400">Initial password for newly enrolled students</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-4 border-t">
+                  <Button onClick={() => saveTab('admission', admissionForm)} disabled={savingTab === 'admission'} className="bg-teal-700 hover:bg-teal-800">
+                    <Save className="h-4 w-4 mr-2" />
+                    {savingTab === 'admission' ? 'Saving...' : 'Save Admission Settings'}
                   </Button>
                 </div>
               </CardContent>

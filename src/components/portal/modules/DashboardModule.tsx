@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ROLE_LABELS } from '@/lib/nav-config'
+import { ROLE_LABELS, ROLE_DESCRIPTIONS } from '@/lib/nav-config'
 import {
   Users, GraduationCap, DollarSign, BookOpen, TrendingUp, TrendingDown,
   ClipboardCheck, FileText, Award, Calendar, ArrowUpRight, Bell,
@@ -62,7 +62,7 @@ export function DashboardModule() {
             Welcome back, {user?.name}! 👋
           </h1>
           <p className="text-teal-100">
-            Here's what's happening at Bright Future Academy today.
+            {ROLE_DESCRIPTIONS[role]}
           </p>
           <p className="text-teal-200 text-sm mt-2">
             {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
@@ -248,12 +248,20 @@ export function DashboardModule() {
 function getStatCards(role: UserRole, stats: any) {
   switch (role) {
     case 'super_admin':
-    case 'admin':
       return [
         { label: 'Total Students', value: stats.totalStudents || 0, icon: Users, bgColor: 'bg-teal-50', iconColor: 'text-teal-600', trend: 12 },
         { label: 'Total Teachers', value: stats.totalTeachers || 0, icon: GraduationCap, bgColor: 'bg-orange-50', iconColor: 'text-orange-600', trend: 5 },
         { label: 'Total Revenue', value: `${(stats.totalRevenue || 0).toLocaleString()} ETB`, icon: DollarSign, bgColor: 'bg-green-50', iconColor: 'text-green-600', trend: 8 },
-        { label: 'Library Books', value: stats.totalBooks || 0, icon: BookOpen, bgColor: 'bg-amber-50', iconColor: 'text-amber-600', trend: 3 },
+        { label: 'Total Expenses', value: `${(stats.totalExpenses || 0).toLocaleString()} ETB`, icon: TrendingDown, bgColor: 'bg-red-50', iconColor: 'text-red-600' },
+        { label: 'Library Books', value: stats.totalBooks || 0, icon: BookOpen, bgColor: 'bg-amber-50', iconColor: 'text-amber-600' },
+        { label: 'Attendance Rate', value: `${stats.attendanceRate || 0}%`, icon: CheckCircle2, bgColor: 'bg-blue-50', iconColor: 'text-blue-600' },
+      ]
+    case 'admin':
+      return [
+        { label: 'Total Students', value: stats.totalStudents || 0, icon: Users, bgColor: 'bg-teal-50', iconColor: 'text-teal-600', trend: 12 },
+        { label: 'Total Teachers', value: stats.totalTeachers || 0, icon: GraduationCap, bgColor: 'bg-orange-50', iconColor: 'text-orange-600', trend: 5 },
+        { label: 'Total Revenue', value: `${(stats.totalRevenue || 0).toLocaleString()} ETB`, icon: DollarSign, bgColor: 'bg-green-50', iconColor: 'text-green-600' },
+        { label: 'Library Books', value: stats.totalBooks || 0, icon: BookOpen, bgColor: 'bg-amber-50', iconColor: 'text-amber-600' },
       ]
     case 'teacher':
       return [

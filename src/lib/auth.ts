@@ -86,24 +86,111 @@ function generateToken(): string {
     .join('')
 }
 
-// Role hierarchy for permission checks
+// Role hierarchy for permission checks - Full Role & Permission Structure
 export const ROLE_PERMISSIONS: Record<string, string[]> = {
-  super_admin: ['*'], // all permissions
+  // 1. Super Admin - Full Control over everything
+  super_admin: ['*'],
+
+  // 2. School Admin - Limited Control (own school only, no system settings)
   admin: [
-    'student.*', 'teacher.view', 'mark.*', 'rank.*', 'report.*',
-    'assignment.*', 'attendance.*', 'promotion.*', 'idcard.*',
-    'certificate.*', 'finance.*', 'hr.*', 'library.*', 'profile.edit'
+    // Academic Management
+    'academicyear.*', 'department.*', 'class.*', 'section.*', 'subject.*',
+    'timetable.*', 'exam.*', 'grade.*',
+    // Staff Management
+    'teacher.*', 'employee.*', 'attendance.*', 'leave.*',
+    // Student Management
+    'student.*', 'promotion.*', 'certificate.*', 'idcard.*', 'transfer.*',
+    // Academic Records
+    'mark.*', 'rank.*', 'report.*', 'assignment.*', 'homework.*',
+    // Finance (view only)
+    'finance.view', 'payroll.view',
+    // Library (view only)
+    'library.view',
+    // HR
+    'hr.*',
+    // Reports
+    'report.student', 'report.attendance', 'report.exam', 'report.fee',
+    // Limited settings
+    'settings.limited',
+    // Profile
+    'profile.edit',
   ],
+
+  // 3. Teacher - Assigned classes/subjects only
   teacher: [
-    'student.view', 'mark.*', 'rank.*', 'report.*', 'assignment.*',
-    'attendance.*', 'promotion.*', 'idcard.*', 'certificate.*', 'profile.edit'
+    // Academic (assigned only)
+    'academicyear.view', 'class.view', 'section.view', 'subject.view',
+    'timetable.view',
+    // Attendance (manage assigned)
+    'attendance.*',
+    // Exams & Marks
+    'mark.*', 'exam.view', 'rank.*', 'report.*',
+    // Assignments & Homework
+    'assignment.*', 'homework.*',
+    // Students (assigned only, view)
+    'student.view',
+    // Communication
+    'message.student', 'message.parent', 'announcement.*',
+    // Reports (limited)
+    'report.student', 'report.attendance',
+    // ID Card & Certificate
+    'idcard.*', 'certificate.*',
+    // Profile
+    'profile.edit',
   ],
+
+  // 4. Student - Personal access only
   student: [
-    'mark.view', 'rank.view', 'report.view', 'assignment.submit',
-    'attendance.view', 'promotion.view', 'library.*', 'profile.edit'
+    // Profile
+    'profile.edit', 'profile.view',
+    // Academic (view own)
+    'subject.view', 'timetable.view', 'attendance.view', 'mark.view',
+    'rank.view', 'report.view', 'grade.view', 'result.view',
+    // Homework
+    'homework.view', 'homework.submit',
+    // Finance (view own fees)
+    'finance.view', 'fee.status',
+    // Library (own books)
+    'library.view', 'library.borrow', 'library.renew',
+    // Communication
+    'message.teacher', 'notice.view',
+    // Promotion (view own)
+    'promotion.view',
   ],
-  finance: ['finance.*', 'profile.edit'],
-  library: ['library.*', 'profile.edit'],
+
+  // 5. Finance - All financial operations
+  finance: [
+    // Student Fees
+    'finance.*', 'fee.*', 'discount.*', 'fine.*', 'scholarship.*',
+    // Payroll
+    'payroll.*',
+    // Expenses
+    'expense.*',
+    // Income
+    'income.*',
+    // Reports (finance)
+    'report.finance', 'report.collection', 'report.outstanding',
+    'report.profitloss', 'report.cashbook', 'report.balancesheet',
+    // Students (fee status only)
+    'student.view',
+    // Profile
+    'profile.edit',
+  ],
+
+  // 6. Library - Book management
+  library: [
+    // Book Management
+    'library.*', 'book.*',
+    // Book Issue
+    'loan.*',
+    // Student Library
+    'student.view',
+    // Reports (library)
+    'report.library', 'report.available', 'report.issued',
+    'report.overdue', 'report.fine', 'report.lost',
+    // Profile
+    'profile.edit',
+  ],
 }
 
 export function hasPermission(role: string, permission: string): boolean {

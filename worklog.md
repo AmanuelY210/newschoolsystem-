@@ -608,3 +608,47 @@ Stage Summary:
 - Verified: Changed portal name to "SMS Portal" → login page updated
 - Verified: Logo image displays in header, footer, login page, and portal sidebar
 - Lint passes cleanly
+
+---
+Task ID: ROLE-PERMISSION-UPDATE
+Agent: Main (Claude)
+Task: Update role & permission structure with 6 roles per detailed spec
+
+Work Log:
+- Updated ROLE_PERMISSIONS in auth.ts with comprehensive permission matrix:
+  - Super Admin: ['*'] full control
+  - School Admin: academic management, staff management, student management, reports, finance.view, library.view, hr.*, no system settings
+  - Teacher: assigned classes/subjects, attendance, marks, assignments, homework, communication, limited reports, idcard, certificate
+  - Student: profile, academic (view own), homework (view/submit), finance.view (fee status), library (own books), communication, promotion.view
+  - Finance: finance.*, fee.*, discount.*, fine.*, scholarship.*, payroll.*, expense.*, income.*, finance reports, student.view
+  - Library: library.*, book.*, loan.*, library reports, student.view
+- Updated nav-config.ts ROLE_MODULES with role-specific modules:
+  - Super Admin: 21 modules (Dashboard, Website CMS, Website Settings, Schools, Students, Teachers, HR, Marks & Grades, Rank, Reports, Assignments, Attendance, Promotion, ID Card, Certificate, Events, Finance, Library, Online Applications, Contact Messages, My Profile)
+  - School Admin: 18 modules (Student Admission, Teachers, HR, Marks & Grades, Rank, Reports, Assignments, Attendance, Promotion, ID Card, Certificate, Events, Finance (View), Library (View), Online Applications, Contact Messages, My Profile)
+  - Teacher: 11 modules (My Students, Attendance, Marks Entry, Rank, Reports, Assignments, ID Card, Certificate, Events, My Profile)
+  - Student: 10 modules (My Marks, My Rank, My Reports, Homework, My Attendance, My Promotion, Fee Status, Library, My Profile)
+  - Finance: 4 modules (Finance Management, Students (Fees), My Profile)
+  - Library: 4 modules (Library Management, Students, My Profile)
+- Added ROLE_DESCRIPTIONS with descriptive text for each role
+- Updated ROLE_LABELS: admin → "School Admin"
+- Updated DashboardModule:
+  - Super Admin: 6 stat cards (Total Students, Total Teachers, Total Revenue, Total Expenses, Library Books, Attendance Rate)
+  - School Admin: 4 stat cards (Total Students, Total Teachers, Total Revenue, Library Books)
+  - Dashboard banner shows role description text
+- Verified all 6 roles with Agent Browser:
+  - Super Admin: 21 modules, "Full system control" description
+  - School Admin: 18 modules, "Manages one school" description, Finance (View) and Library (View)
+  - Teacher: 11 modules, "Manages assigned classes" description
+  - Student: 10 modules, "Personal access" description, includes Fee Status and Homework
+  - Finance: 4 modules, "Manages all financial operations" description
+  - Library: 4 modules, "Manages library" description
+
+Stage Summary:
+- Complete role & permission structure implemented per spec
+- All 6 roles have appropriate modules and permissions
+- Dashboard shows role-specific stats and descriptions
+- School Admin has view-only access to Finance and Library (cannot manage)
+- Teacher cannot add/delete students or access finance/library
+- Student has view-only access with homework submission and fee status
+- Finance and Library roles are restricted to their domains
+- Lint passes cleanly

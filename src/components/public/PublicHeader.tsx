@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import {
   Menu,
   ChevronDown,
@@ -63,12 +63,21 @@ export function PublicHeader() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
 
-  useEffect(() => {
+  const fetchSettings = useCallback(() => {
     fetch('/api/settings')
       .then((r) => r.json())
-      .then((data) => setSettings(data.settings || {}))
+      .then((data) => {
+        if (data.settings) setSettings(data.settings)
+      })
       .catch(() => {})
   }, [])
+
+  useEffect(() => {
+    fetchSettings()
+    // Poll for real-time updates every 5 seconds (for logo/name/tagline changes)
+    const interval = setInterval(fetchSettings, 5000)
+    return () => clearInterval(interval)
+  }, [fetchSettings])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)

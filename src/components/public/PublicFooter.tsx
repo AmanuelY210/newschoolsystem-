@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import {
   GraduationCap,
   MapPin,
@@ -49,16 +49,22 @@ export function PublicFooter() {
   const [settings, setSettings] = useState<Record<string, string>>({})
   const [socials, setSocials] = useState<SocialLink[]>([])
 
-  useEffect(() => {
+  const fetchSettings = useCallback(() => {
     fetch('/api/settings')
       .then((r) => r.json())
-      .then((data) => setSettings(data.settings || {}))
+      .then((data) => { if (data.settings) setSettings(data.settings) })
       .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    fetchSettings()
+    const interval = setInterval(fetchSettings, 5000)
     fetch('/api/social')
       .then((r) => r.json())
       .then((data) => setSocials(data.links || []))
       .catch(() => {})
-  }, [])
+    return () => clearInterval(interval)
+  }, [fetchSettings])
 
   const schoolName = settings.school_name || 'Bright Future Academy'
   const tagline = settings.school_tagline || 'Excellence in Education'

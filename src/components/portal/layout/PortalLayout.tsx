@@ -201,10 +201,16 @@ export function PortalLayout({ children }: PortalLayoutProps) {
   const [settings, setSettings] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    fetch('/api/settings')
-      .then((r) => r.json())
-      .then((data) => setSettings(data.settings || {}))
-      .catch(() => {})
+    const fetchSettings = () => {
+      fetch('/api/settings')
+        .then((r) => r.json())
+        .then((data) => { if (data.settings) setSettings(data.settings) })
+        .catch(() => {})
+    }
+    fetchSettings()
+    // Poll for real-time updates every 5 seconds
+    const interval = setInterval(fetchSettings, 5000)
+    return () => clearInterval(interval)
   }, [])
 
   if (!user) return null

@@ -66,12 +66,13 @@ function BrandingImageUpload({
   description: string
   value: string
   onChange: (url: string) => void
-  onSave: () => void
+  onSave: (overrideKey?: string, overrideValue?: string) => Promise<void>
   previewClass: string
   isFavicon?: boolean
 }) {
   const [uploading, setUploading] = useState(false)
   const { toast } = useToast()
+  const settingKey = isFavicon ? 'favicon' : 'logo'
 
   const handleUpload = async (file: File) => {
     if (file.size > 5 * 1024 * 1024) {
@@ -87,7 +88,9 @@ function BrandingImageUpload({
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       onChange(data.url)
-      toast({ title: 'Uploaded', description: `${label} uploaded successfully` })
+      // Auto-save immediately with the new URL
+      await onSave(settingKey, data.url)
+      toast({ title: 'Uploaded & Saved', description: `${label} uploaded and applied in real-time` })
     } catch (error: any) {
       toast({ title: 'Upload failed', description: error.message, variant: 'destructive' })
     } finally {
@@ -95,9 +98,11 @@ function BrandingImageUpload({
     }
   }
 
-  const handleRemove = () => {
+  const handleRemove = async () => {
     onChange('')
-    toast({ title: 'Removed', description: `${label} removed. Click Save to apply.` })
+    // Auto-save immediately with empty URL
+    await onSave(settingKey, '')
+    toast({ title: 'Removed', description: `${label} removed and saved` })
   }
 
   return (
@@ -242,10 +247,12 @@ export function WebsiteSettingsModule() {
     return <AccessDenied />
   }
 
-  const saveTab = async (tabName: string, payload: Record<string, string>) => {
+  const saveTab = async (tabName: string, payload: Record<string, string>, overrideKey?: string, overrideValue?: string) => {
     setSavingTab(tabName)
     try {
-      await apiPut('/api/settings', payload)
+      // If override provided, use it directly (for auto-save on image upload)
+      const dataToSave = overrideKey !== undefined ? { [overrideKey]: overrideValue ?? '' } : payload
+      await apiPut('/api/settings', dataToSave)
       toast({ title: 'Success', description: `${tabName.charAt(0).toUpperCase() + tabName.slice(1)} settings saved` })
       broadcastDataUpdate('settings', 'update')
       refetch()
@@ -455,7 +462,7 @@ export function WebsiteSettingsModule() {
                     description="Displayed in the header, footer, and login page (recommended: 200x200px, PNG/SVG)"
                     value={brandingForm.logo || ''}
                     onChange={(url) => setBrandingForm({ ...brandingForm, logo: url })}
-                    onSave={() => saveTab('branding', brandingForm)}
+                    onSave={(key, val) => saveTab('branding', brandingForm, key, val)}
                     previewClass="max-h-20 object-contain"
                   />
                   <BrandingImageUpload
@@ -463,7 +470,7 @@ export function WebsiteSettingsModule() {
                     description="Browser tab icon (recommended: 32x32px, PNG/ICO)"
                     value={brandingForm.favicon || ''}
                     onChange={(url) => setBrandingForm({ ...brandingForm, favicon: url })}
-                    onSave={() => saveTab('branding', brandingForm)}
+                    onSave={(key, val) => saveTab('branding', brandingForm, key, val)}
                     previewClass="max-h-16 max-w-16 object-contain"
                     isFavicon
                   />

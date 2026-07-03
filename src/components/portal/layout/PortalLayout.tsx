@@ -23,6 +23,7 @@ import {
 import { useWebSocket } from '@/lib/use-websocket'
 import { useOnlineUsers, useFirebasePresence } from '@/lib/use-firebase'
 import { useToast } from '@/components/ui/use-toast'
+import { LanguageSelector } from '@/components/ui/LanguageSelector'
 import { cn } from '@/lib/utils'
 
 interface PortalLayoutProps {
@@ -300,6 +301,9 @@ export function PortalLayout({ children }: PortalLayoutProps) {
               <div className={cn('h-2 w-2 rounded-full', connected ? 'bg-green-500 animate-pulse' : 'bg-gray-400')} />
               <span className="text-xs font-medium text-green-700">{displayOnlineCount} online</span>
             </div>
+
+            {/* Language Selector */}
+            <LanguageSelector />
 
             {/* Notifications */}
             <DropdownMenu>

@@ -1,0 +1,964 @@
+     1→'use client'
+     2→
+     3→import { useEffect, useState } from 'react'
+     4→import { useAppStore, UserRole } from '@/lib/store'
+     5→import { useApi, apiPost, apiPut, apiDelete } from '@/lib/use-api'
+     6→import { useWebSocket } from '@/lib/use-websocket'
+     7→import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+     8→import { Button } from '@/components/ui/button'
+     9→import { Input } from '@/components/ui/input'
+    10→import { Label } from '@/components/ui/label'
+    11→import { Badge } from '@/components/ui/badge'
+    12→import { Switch } from '@/components/ui/switch'
+    13→import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+    14→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+    15→import { Skeleton } from '@/components/ui/skeleton'
+    16→import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
+    17→import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+    18→import { useToast } from '@/components/ui/use-toast'
+    19→import {
+    20→  Save, ShieldAlert, Building2, Image as ImageIcon, PanelTop,
+    21→  Search, Facebook, Twitter, Instagram, Youtube, Linkedin, Send,
+    22→  Plus, Edit, Trash2, ExternalLink, Globe, Palette,
+    23→  GraduationCap, Hash, IdCard, CreditCard, FileText, Upload, Loader2,
+    24→} from 'lucide-react'
+    25→import { motion } from 'framer-motion'
+    26→
+    27→const PLATFORMS = [
+    28→  { value: 'facebook', label: 'Facebook', icon: Facebook, color: '#1877f2' },
+    29→  { value: 'twitter', label: 'Twitter', icon: Twitter, color: '#1da1f2' },
+    30→  { value: 'instagram', label: 'Instagram', icon: Instagram, color: '#e4405f' },
+    31→  { value: 'youtube', label: 'YouTube', icon: Youtube, color: '#ff0000' },
+    32→  { value: 'linkedin', label: 'LinkedIn', icon: Linkedin, color: '#0a66c2' },
+    33→  { value: 'telegram', label: 'Telegram', icon: Send, color: '#0088cc' },
+    34→] as const
+    35→
+    36→function AccessDenied() {
+    37→  return (
+    38→    <div className="flex items-center justify-center min-h-[60vh]">
+    39→      <Card className="max-w-md w-full">
+    40→        <CardContent className="p-8 text-center">
+    41→          <div className="h-16 w-16 rounded-full bg-rose-50 flex items-center justify-center mx-auto mb-4">
+    42→            <ShieldAlert className="h-8 w-8 text-rose-600" />
+    43→          </div>
+    44→          <h2 className="text-xl font-bold text-gray-900 mb-2">Access Denied</h2>
+    45→          <p className="text-gray-500 text-sm">
+    46→            Only <span className="font-semibold text-gray-700">Super Admins</span> can manage website settings.
+    47→            Please contact your administrator if you need access.
+    48→          </p>
+    49→        </CardContent>
+    50→      </Card>
+    51→    </div>
+    52→  )
+    53→}
+    54→
+    55→// ============ BRANDING IMAGE UPLOAD COMPONENT ============
+    56→function BrandingImageUpload({
+    57→  label,
+    58→  description,
+    59→  value,
+    60→  onChange,
+    61→  onSave,
+    62→  previewClass,
+    63→  isFavicon,
+    64→}: {
+    65→  label: string
+    66→  description: string
+    67→  value: string
+    68→  onChange: (url: string) => void
+    69→  onSave: (overrideKey?: string, overrideValue?: string) => Promise<void>
+    70→  previewClass: string
+    71→  isFavicon?: boolean
+    72→}) {
+    73→  const [uploading, setUploading] = useState(false)
+    74→  const { toast } = useToast()
+    75→  const settingKey = isFavicon ? 'favicon' : 'logo'
+    76→
+    77→  const handleUpload = async (file: File) => {
+    78→    if (file.size > 5 * 1024 * 1024) {
+    79→      toast({ title: 'File too large', description: 'Maximum file size is 5MB', variant: 'destructive' })
+    80→      return
+    81→    }
+    82→    setUploading(true)
+    83→    try {
+    84→      const fd = new FormData()
+    85→      fd.append('file', file)
+    86→      fd.append('folder', isFavicon ? 'favicon' : 'logo')
+    87→      const res = await fetch('/api/upload', { method: 'POST', body: fd })
+    88→      const data = await res.json()
+    89→      if (!res.ok) throw new Error(data.error)
+    90→      onChange(data.url)
+    91→      // Auto-save immediately with the new URL
+    92→      await onSave(settingKey, data.url)
+    93→      toast({ title: 'Uploaded & Saved', description: `${label} uploaded and applied in real-time` })
+    94→    } catch (error: any) {
+    95→      toast({ title: 'Upload failed', description: error.message, variant: 'destructive' })
+    96→    } finally {
+    97→      setUploading(false)
+    98→    }
+    99→  }
+   100→
+   101→  const handleRemove = async () => {
+   102→    onChange('')
+   103→    // Auto-save immediately with empty URL
+   104→    await onSave(settingKey, '')
+   105→    toast({ title: 'Removed', description: `${label} removed and saved` })
+   106→  }
+   107→
+   108→  return (
+   109→    <div className="space-y-3">
+   110→      <div>
+   111→        <Label>{label}</Label>
+   112→        <p className="text-xs text-gray-500 mt-0.5">{description}</p>
+   113→      </div>
+   114→      <div className="rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 p-4 flex flex-col items-center justify-center min-h-[140px] gap-2">
+   115→        {value ? (
+   116→          <>
+   117→            <div className="bg-white rounded-lg p-2 shadow-sm">
+   118→              <img src={value} alt={label} className={previewClass} />
+   119→            </div>
+   120→            <div className="flex gap-2">
+   121→              <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-gray-200 bg-white cursor-pointer hover:bg-gray-50">
+   122→                {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+   123→                {uploading ? 'Uploading...' : 'Replace'}
+   124→                <input
+   125→                  type="file"
+   126→                  className="hidden"
+   127→                  accept="image/*"
+   128→                  onChange={(e) => {
+   129→                    const file = e.target.files?.[0]
+   130→                    if (file) handleUpload(file)
+   131→                  }}
+   132→                />
+   133→              </label>
+   134→              <Button
+   135→                type="button"
+   136→                variant="outline"
+   137→                size="sm"
+   138→                className="h-7 text-xs text-red-600 border-red-200 hover:bg-red-50"
+   139→                onClick={handleRemove}
+   140→              >
+   141→                <Trash2 className="h-3 w-3 mr-1" />
+   142→                Remove
+   143→              </Button>
+   144→            </div>
+   145→          </>
+   146→        ) : (
+   147→          <>
+   148→            <ImageIcon className="h-10 w-10 text-gray-300" />
+   149→            <p className="text-xs text-gray-400">No image uploaded</p>
+   150→            <label className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-md bg-teal-700 text-white cursor-pointer hover:bg-teal-800">
+   151→              {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+   152→              {uploading ? 'Uploading...' : `Upload ${label}`}
+   153→              <input
+   154→                type="file"
+   155→                className="hidden"
+   156→                accept="image/*"
+   157→                onChange={(e) => {
+   158→                  const file = e.target.files?.[0]
+   159→                  if (file) handleUpload(file)
+   160→                }}
+   161→              />
+   162→            </label>
+   163→          </>
+   164→        )}
+   165→      </div>
+   166→      {value && (
+   167→        <Input
+   168→          value={value}
+   169→          onChange={(e) => onChange(e.target.value)}
+   170→          placeholder="Image URL (auto-filled on upload)"
+   171→          className="text-xs font-mono"
+   172→        />
+   173→      )}
+   174→    </div>
+   175→  )
+   176→}
+   177→
+   178→const GENERAL_KEYS = ['school_name', 'school_tagline', 'portal_name', 'school_address', 'school_phone', 'school_email', 'primary_color']
+   179→const BRANDING_KEYS = ['logo', 'favicon']
+   180→const HEADER_FOOTER_KEYS = ['header_text', 'footer_text']
+   181→const SEO_KEYS = ['seo_title', 'seo_description', 'seo_keywords']
+   182→const ADMISSION_KEYS = [
+   183→  'admission_prefix',
+   184→  'admission_year',
+   185→  'admission_padding',
+   186→  'admission_start_number',
+   187→  'student_id_prefix',
+   188→  'student_id_padding',
+   189→  'application_id_prefix',
+   190→  'tracking_prefix',
+   191→  'admission_fee_amount',
+   192→  'admission_default_password',
+   193→]
+   194→
+   195→export function WebsiteSettingsModule() {
+   196→  const { user } = useAppStore()
+   197→  const role = user?.role as UserRole
+   198→  const { toast } = useToast()
+   199→  const { broadcastDataUpdate } = useWebSocket()
+   200→
+   201→  const [tab, setTab] = useState('general')
+   202→
+   203→  // Settings are stored as key-value pairs in the SiteSetting table.
+   204→  const { data, loading, refetch } = useApi<{ settings: Record<string, string> }>('/api/settings')
+   205→  const settings = data?.settings || {}
+   206→
+   207→  // Local editable copies per tab
+   208→  const [generalForm, setGeneralForm] = useState<Record<string, string>>({})
+   209→  const [brandingForm, setBrandingForm] = useState<Record<string, string>>({})
+   210→  const [headerFooterForm, setHeaderFooterForm] = useState<Record<string, string>>({})
+   211→  const [seoForm, setSeoForm] = useState<Record<string, string>>({})
+   212→  const [admissionForm, setAdmissionForm] = useState<Record<string, string>>({})
+   213→  const [savingTab, setSavingTab] = useState<string | null>(null)
+   214→
+   215→  // Hydrate local forms when settings load
+   216→  useEffect(() => {
+   217→    if (!loading && settings) {
+   218→      setGeneralForm(GENERAL_KEYS.reduce((acc, k) => ({ ...acc, [k]: settings[k] || '' }), {}))
+   219→      setBrandingForm(BRANDING_KEYS.reduce((acc, k) => ({ ...acc, [k]: settings[k] || '' }), {}))
+   220→      setHeaderFooterForm(HEADER_FOOTER_KEYS.reduce((acc, k) => ({ ...acc, [k]: settings[k] || '' }), {}))
+   221→      setSeoForm(SEO_KEYS.reduce((acc, k) => ({ ...acc, [k]: settings[k] || '' }), {}))
+   222→      setAdmissionForm({
+   223→        admission_prefix: settings.admission_prefix || 'ADM',
+   224→        admission_year: settings.admission_year || String(new Date().getFullYear()),
+   225→        admission_padding: settings.admission_padding || '3',
+   226→        admission_start_number: settings.admission_start_number || '1',
+   227→        student_id_prefix: settings.student_id_prefix || 'STU',
+   228→        student_id_padding: settings.student_id_padding || '3',
+   229→        application_id_prefix: settings.application_id_prefix || 'APP',
+   230→        tracking_prefix: settings.tracking_prefix || 'TRK',
+   231→        admission_fee_amount: settings.admission_fee_amount || '500',
+   232→        admission_default_password: settings.admission_default_password || 'password123',
+   233→      })
+   234→    }
+   235→  }, [loading, settings])
+   236→
+   237→  // Social links state
+   238→  const [socialDialogOpen, setSocialDialogOpen] = useState(false)
+   239→  const [editSocialId, setEditSocialId] = useState<string | null>(null)
+   240→  const [socialForm, setSocialForm] = useState<any>({ platform: 'facebook', url: '', active: true })
+   241→  const [submittingSocial, setSubmittingSocial] = useState(false)
+   242→  const [deleteSocialId, setDeleteSocialId] = useState<string | null>(null)
+   243→  const { data: socialData, loading: socialLoading, refetch: refetchSocial } = useApi<{ links: any[] }>('/api/social')
+   244→  const socialLinks = socialData?.links || []
+   245→
+   246→  if (role !== 'super_admin') {
+   247→    return <AccessDenied />
+   248→  }
+   249→
+   250→  const saveTab = async (tabName: string, payload: Record<string, string>, overrideKey?: string, overrideValue?: string) => {
+   251→    setSavingTab(tabName)
+   252→    try {
+   253→      // If override provided, use it directly (for auto-save on image upload)
+   254→      const dataToSave = overrideKey !== undefined ? { [overrideKey]: overrideValue ?? '' } : payload
+   255→      await apiPut('/api/settings', dataToSave)
+   256→      toast({ title: 'Success', description: `${tabName.charAt(0).toUpperCase() + tabName.slice(1)} settings saved` })
+   257→      broadcastDataUpdate('settings', 'update')
+   258→      refetch()
+   259→    } catch (error: any) {
+   260→      toast({ title: 'Error', description: error.message, variant: 'destructive' })
+   261→    } finally {
+   262→      setSavingTab(null)
+   263→    }
+   264→  }
+   265→
+   266→  // Social handlers
+   267→  const openCreateSocial = () => {
+   268→    setEditSocialId(null)
+   269→    setSocialForm({ platform: 'facebook', url: '', active: true })
+   270→    setSocialDialogOpen(true)
+   271→  }
+   272→  const openEditSocial = (link: any) => {
+   273→    setEditSocialId(link.id)
+   274→    setSocialForm({ platform: link.platform, url: link.url, active: link.active })
+   275→    setSocialDialogOpen(true)
+   276→  }
+   277→  const handleSocialSubmit = async (e: React.FormEvent) => {
+   278→    e.preventDefault()
+   279→    if (!socialForm.platform || !socialForm.url) {
+   280→      toast({ title: 'Error', description: 'Platform and URL are required', variant: 'destructive' })
+   281→      return
+   282→    }
+   283→    setSubmittingSocial(true)
+   284→    try {
+   285→      if (editSocialId) {
+   286→        await apiPut(`/api/social/${editSocialId}`, socialForm)
+   287→        toast({ title: 'Success', description: 'Social link updated' })
+   288→        broadcastDataUpdate('social', 'update')
+   289→      } else {
+   290→        await apiPost('/api/social', socialForm)
+   291→        toast({ title: 'Success', description: 'Social link added' })
+   292→        broadcastDataUpdate('social', 'create')
+   293→      }
+   294→      setSocialDialogOpen(false)
+   295→      refetchSocial()
+   296→    } catch (error: any) {
+   297→      toast({ title: 'Error', description: error.message, variant: 'destructive' })
+   298→    } finally {
+   299→      setSubmittingSocial(false)
+   300→    }
+   301→  }
+   302→  const handleSocialDelete = async () => {
+   303→    if (!deleteSocialId) return
+   304→    try {
+   305→      await apiDelete(`/api/social/${deleteSocialId}`)
+   306→      toast({ title: 'Success', description: 'Social link deleted' })
+   307→      broadcastDataUpdate('social', 'delete')
+   308→      setDeleteSocialId(null)
+   309→      refetchSocial()
+   310→    } catch (error: any) {
+   311→      toast({ title: 'Error', description: error.message, variant: 'destructive' })
+   312→    }
+   313→  }
+   314→
+   315→  return (
+   316→    <div className="space-y-6">
+   317→      {/* Header */}
+   318→      <div>
+   319→        <h1 className="text-2xl font-bold text-gray-900">Website Settings</h1>
+   320→        <p className="text-gray-500">Configure your school website&apos;s general info, branding, SEO, and social links</p>
+   321→      </div>
+   322→
+   323→      {loading ? (
+   324→        <div className="space-y-4">
+   325→          <Skeleton className="h-10 w-72" />
+   326→          <Skeleton className="h-96 w-full" />
+   327→        </div>
+   328→      ) : (
+   329→        <Tabs value={tab} onValueChange={setTab}>
+   330→          <TabsList className="grid w-full sm:w-auto grid-cols-2 sm:grid-cols-6 h-auto">
+   331→            <TabsTrigger value="general" className="gap-2">
+   332→              <Building2 className="h-4 w-4" />
+   333→              <span className="hidden sm:inline">General</span>
+   334→            </TabsTrigger>
+   335→            <TabsTrigger value="branding" className="gap-2">
+   336→              <Palette className="h-4 w-4" />
+   337→              <span className="hidden sm:inline">Branding</span>
+   338→            </TabsTrigger>
+   339→            <TabsTrigger value="header-footer" className="gap-2">
+   340→              <PanelTop className="h-4 w-4" />
+   341→              <span className="hidden sm:inline">Header/Footer</span>
+   342→            </TabsTrigger>
+   343→            <TabsTrigger value="seo" className="gap-2">
+   344→              <Search className="h-4 w-4" />
+   345→              <span className="hidden sm:inline">SEO</span>
+   346→            </TabsTrigger>
+   347→            <TabsTrigger value="admission" className="gap-2">
+   348→              <GraduationCap className="h-4 w-4" />
+   349→              <span className="hidden sm:inline">Admission</span>
+   350→            </TabsTrigger>
+   351→            <TabsTrigger value="social" className="gap-2">
+   352→              <Globe className="h-4 w-4" />
+   353→              <span className="hidden sm:inline">Social</span>
+   354→            </TabsTrigger>
+   355→          </TabsList>
+   356→
+   357→          {/* ===== GENERAL TAB ===== */}
+   358→          <TabsContent value="general" className="mt-6">
+   359→            <Card>
+   360→              <CardHeader>
+   361→                <CardTitle className="flex items-center gap-2">
+   362→                  <Building2 className="h-5 w-5 text-teal-600" />
+   363→                  General Information
+   364→                </CardTitle>
+   365→                <CardDescription>Basic school contact and identity details</CardDescription>
+   366→              </CardHeader>
+   367→              <CardContent className="space-y-4">
+   368→                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   369→                  <div className="space-y-2 sm:col-span-2">
+   370→                    <Label>School Name</Label>
+   371→                    <Input
+   372→                      value={generalForm.school_name || ''}
+   373→                      onChange={(e) => setGeneralForm({ ...generalForm, school_name: e.target.value })}
+   374→                      placeholder="Bright Future Academy"
+   375→                    />
+   376→                    <p className="text-xs text-gray-500">Displayed in the website header and footer</p>
+   377→                  </div>
+   378→                  <div className="space-y-2 sm:col-span-2">
+   379→                    <Label>School Tagline</Label>
+   380→                    <Input
+   381→                      value={generalForm.school_tagline || ''}
+   382→                      onChange={(e) => setGeneralForm({ ...generalForm, school_tagline: e.target.value })}
+   383→                      placeholder="Excellence in Education"
+   384→                    />
+   385→                    <p className="text-xs text-gray-500">Short slogan shown next to the school name (e.g., "Excellence in Education")</p>
+   386→                  </div>
+   387→                  <div className="space-y-2 sm:col-span-2">
+   388→                    <Label>Portal Name</Label>
+   389→                    <Input
+   390→                      value={generalForm.portal_name || ''}
+   391→                      onChange={(e) => setGeneralForm({ ...generalForm, portal_name: e.target.value })}
+   392→                      placeholder="Bright Future Academy Portal"
+   393→                    />
+   394→                    <p className="text-xs text-gray-500">Title shown on the login page and portal sidebar</p>
+   395→                  </div>
+   396→                  <div className="space-y-2 sm:col-span-2">
+   397→                    <Label>Address</Label>
+   398→                    <Input
+   399→                      value={generalForm.school_address || ''}
+   400→                      onChange={(e) => setGeneralForm({ ...generalForm, school_address: e.target.value })}
+   401→                      placeholder="Bole Road, Addis Ababa, Ethiopia"
+   402→                    />
+   403→                  </div>
+   404→                  <div className="space-y-2">
+   405→                    <Label>Phone</Label>
+   406→                    <Input
+   407→                      value={generalForm.school_phone || ''}
+   408→                      onChange={(e) => setGeneralForm({ ...generalForm, school_phone: e.target.value })}
+   409→                      placeholder="+251 11 234 5678"
+   410→                    />
+   411→                  </div>
+   412→                  <div className="space-y-2">
+   413→                    <Label>Email</Label>
+   414→                    <Input
+   415→                      type="email"
+   416→                      value={generalForm.school_email || ''}
+   417→                      onChange={(e) => setGeneralForm({ ...generalForm, school_email: e.target.value })}
+   418→                      placeholder="info@school.edu"
+   419→                    />
+   420→                  </div>
+   421→                  <div className="space-y-2 sm:col-span-2">
+   422→                    <Label>Primary Color (hex)</Label>
+   423→                    <div className="flex items-center gap-3">
+   424→                      <Input
+   425→                        value={generalForm.primary_color || ''}
+   426→                        onChange={(e) => setGeneralForm({ ...generalForm, primary_color: e.target.value })}
+   427→                        placeholder="#0d9488"
+   428→                        className="flex-1"
+   429→                      />
+   430→                      <div
+   431→                        className="h-10 w-10 rounded-md border"
+   432→                        style={{ backgroundColor: generalForm.primary_color || '#0d9488' }}
+   433→                      />
+   434→                    </div>
+   435→                    <p className="text-xs text-gray-500">Used as the main brand color across the website</p>
+   436→                  </div>
+   437→                </div>
+   438→                <div className="flex justify-end pt-4 border-t">
+   439→                  <Button onClick={() => saveTab('general', generalForm)} disabled={savingTab === 'general'} className="bg-teal-700 hover:bg-teal-800">
+   440→                    <Save className="h-4 w-4 mr-2" />
+   441→                    {savingTab === 'general' ? 'Saving...' : 'Save Changes'}
+   442→                  </Button>
+   443→                </div>
+   444→              </CardContent>
+   445→            </Card>
+   446→          </TabsContent>
+   447→
+   448→          {/* ===== BRANDING TAB ===== */}
+   449→          <TabsContent value="branding" className="mt-6">
+   450→            <Card>
+   451→              <CardHeader>
+   452→                <CardTitle className="flex items-center gap-2">
+   453→                  <Palette className="h-5 w-5 text-teal-600" />
+   454→                  Branding
+   455→                </CardTitle>
+   456→                <CardDescription>Upload and manage school logo and favicon - changes apply in real-time</CardDescription>
+   457→              </CardHeader>
+   458→              <CardContent className="space-y-6">
+   459→                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+   460→                  <BrandingImageUpload
+   461→                    label="School Logo"
+   462→                    description="Displayed in the header, footer, and login page (recommended: 200x200px, PNG/SVG)"
+   463→                    value={brandingForm.logo || ''}
+   464→                    onChange={(url) => setBrandingForm({ ...brandingForm, logo: url })}
+   465→                    onSave={(key, val) => saveTab('branding', brandingForm, key, val)}
+   466→                    previewClass="max-h-20 object-contain"
+   467→                  />
+   468→                  <BrandingImageUpload
+   469→                    label="Favicon"
+   470→                    description="Browser tab icon (recommended: 32x32px, PNG/ICO)"
+   471→                    value={brandingForm.favicon || ''}
+   472→                    onChange={(url) => setBrandingForm({ ...brandingForm, favicon: url })}
+   473→                    onSave={(key, val) => saveTab('branding', brandingForm, key, val)}
+   474→                    previewClass="max-h-16 max-w-16 object-contain"
+   475→                    isFavicon
+   476→                  />
+   477→                </div>
+   478→
+   479→                {/* Live Header Preview */}
+   480→                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+   481→                  <p className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+   482→                    <PanelTop className="h-4 w-4 text-teal-600" />
+   483→                    Live Header Preview
+   484→                  </p>
+   485→                  <div className="bg-white rounded-lg border p-4 flex items-center gap-3">
+   486→                    {brandingForm.logo ? (
+   487→                      <img src={brandingForm.logo} alt="Logo" className="h-8 w-8 object-contain" />
+   488→                    ) : (
+   489→                      <div className="h-8 w-8 rounded-lg bg-teal-700 flex items-center justify-center">
+   490→                        <GraduationCap className="h-5 w-5 text-white" />
+   491→                      </div>
+   492→                    )}
+   493→                    <div>
+   494→                      <p className="font-bold text-sm text-gray-900">
+   495→                        {generalForm.school_name || 'Bright Future Academy'}
+   496→                      </p>
+   497→                      <p className="text-xs text-teal-600">
+   498→                        {generalForm.school_tagline || 'Excellence in Education'}
+   499→                      </p>
+   500→                    </div>
+   501→                  </div>
+   502→                </div>
+   503→
+   504→                <div className="flex justify-end pt-4 border-t">
+   505→                  <Button onClick={() => saveTab('branding', brandingForm)} disabled={savingTab === 'branding'} className="bg-teal-700 hover:bg-teal-800">
+   506→                    <Save className="h-4 w-4 mr-2" />
+   507→                    {savingTab === 'branding' ? 'Saving...' : 'Save & Apply Changes'}
+   508→                  </Button>
+   509→                </div>
+   510→              </CardContent>
+   511→            </Card>
+   512→          </TabsContent>
+   513→
+   514→          {/* ===== HEADER / FOOTER TAB ===== */}
+   515→          <TabsContent value="header-footer" className="mt-6">
+   516→            <Card>
+   517→              <CardHeader>
+   518→                <CardTitle className="flex items-center gap-2">
+   519→                  <PanelTop className="h-5 w-5 text-teal-600" />
+   520→                  Header &amp; Footer
+   521→                </CardTitle>
+   522→                <CardDescription>Customize the website header and footer text</CardDescription>
+   523→              </CardHeader>
+   524→              <CardContent className="space-y-4">
+   525→                <div className="space-y-2">
+   526→                  <Label>Header Text (tagline shown in navbar)</Label>
+   527→                  <Input
+   528→                    value={headerFooterForm.header_text || ''}
+   529→                    onChange={(e) => setHeaderFooterForm({ ...headerFooterForm, header_text: e.target.value })}
+   530→                    placeholder="Bright Future Academy · Excellence in Education"
+   531→                  />
+   532→                </div>
+   533→                <div className="space-y-2">
+   534→                  <Label>Footer Text (copyright / contact line)</Label>
+   535→                  <Input
+   536→                    value={headerFooterForm.footer_text || ''}
+   537→                    onChange={(e) => setHeaderFooterForm({ ...headerFooterForm, footer_text: e.target.value })}
+   538→                    placeholder="© 2024 Bright Future Academy. All rights reserved."
+   539→                  />
+   540→                </div>
+   541→                {/* Live preview */}
+   542→                <div className="rounded-lg border overflow-hidden bg-white">
+   543→                  <div className="bg-gradient-to-r from-teal-700 to-emerald-800 text-white p-3 text-sm">
+   544→                    {headerFooterForm.header_text || 'Your header text will appear here'}
+   545→                  </div>
+   546→                  <div className="p-8 text-center text-gray-400 text-sm">
+   547→                    [ Website content area ]
+   548→                  </div>
+   549→                  <div className="bg-gray-900 text-gray-300 p-3 text-xs text-center">
+   550→                    {headerFooterForm.footer_text || 'Your footer text will appear here'}
+   551→                  </div>
+   552→                </div>
+   553→                <div className="flex justify-end pt-4 border-t">
+   554→                  <Button onClick={() => saveTab('header-footer', headerFooterForm)} disabled={savingTab === 'header-footer'} className="bg-teal-700 hover:bg-teal-800">
+   555→                    <Save className="h-4 w-4 mr-2" />
+   556→                    {savingTab === 'header-footer' ? 'Saving...' : 'Save Changes'}
+   557→                  </Button>
+   558→                </div>
+   559→              </CardContent>
+   560→            </Card>
+   561→          </TabsContent>
+   562→
+   563→          {/* ===== SEO TAB ===== */}
+   564→          <TabsContent value="seo" className="mt-6">
+   565→            <Card>
+   566→              <CardHeader>
+   567→                <CardTitle className="flex items-center gap-2">
+   568→                  <Search className="h-5 w-5 text-teal-600" />
+   569→                  SEO Settings
+   570→                </CardTitle>
+   571→                <CardDescription>Search engine optimization metadata</CardDescription>
+   572→              </CardHeader>
+   573→              <CardContent className="space-y-4">
+   574→                <div className="space-y-2">
+   575→                  <Label>SEO Title</Label>
+   576→                  <Input
+   577→                    value={seoForm.seo_title || ''}
+   578→                    onChange={(e) => setSeoForm({ ...seoForm, seo_title: e.target.value })}
+   579→                    placeholder="Bright Future Academy | Leading School in Addis Ababa"
+   580→                  />
+   581→                  <p className="text-xs text-gray-500">{(seoForm.seo_title || '').length}/60 characters (recommended max)</p>
+   582→                </div>
+   583→                <div className="space-y-2">
+   584→                  <Label>SEO Description</Label>
+   585→                  <Input
+   586→                    value={seoForm.seo_description || ''}
+   587→                    onChange={(e) => setSeoForm({ ...seoForm, seo_description: e.target.value })}
+   588→                    placeholder="Brief description shown in search results..."
+   589→                  />
+   590→                  <p className="text-xs text-gray-500">{(seoForm.seo_description || '').length}/160 characters (recommended max)</p>
+   591→                </div>
+   592→                <div className="space-y-2">
+   593→                  <Label>SEO Keywords (comma-separated)</Label>
+   594→                  <Input
+   595→                    value={seoForm.seo_keywords || ''}
+   596→                    onChange={(e) => setSeoForm({ ...seoForm, seo_keywords: e.target.value })}
+   597→                    placeholder="school, education, addis ababa, ethiopia, academy"
+   598→                  />
+   599→                </div>
+   600→                {/* Google-style preview */}
+   601→                <div className="rounded-lg border p-4 bg-white">
+   602→                  <p className="text-xs text-gray-700 truncate">{seoForm.seo_title ? `${seoForm.seo_title} | Bright Future Academy`.slice(0, 60) : 'Bright Future Academy | Leading School in Addis Ababa'}</p>
+   603→                  <p className="text-xs text-emerald-700">https://brightfutureacademy.edu</p>
+   604→                  <p className="text-xs text-gray-500 line-clamp-2 mt-0.5">
+   605→                    {seoForm.seo_description || 'Brief description shown in search results...'}
+   606→                  </p>
+   607→                </div>
+   608→                <div className="flex justify-end pt-4 border-t">
+   609→                  <Button onClick={() => saveTab('seo', seoForm)} disabled={savingTab === 'seo'} className="bg-teal-700 hover:bg-teal-800">
+   610→                    <Save className="h-4 w-4 mr-2" />
+   611→                    {savingTab === 'seo' ? 'Saving...' : 'Save Changes'}
+   612→                  </Button>
+   613→                </div>
+   614→              </CardContent>
+   615→            </Card>
+   616→          </TabsContent>
+   617→
+   618→          {/* ===== ADMISSION TAB ===== */}
+   619→          <TabsContent value="admission" className="mt-6">
+   620→            <Card>
+   621→              <CardHeader>
+   622→                <CardTitle className="flex items-center gap-2">
+   623→                  <GraduationCap className="h-5 w-5 text-teal-600" />
+   624→                  Admission Number Configuration
+   625→                </CardTitle>
+   626→                <CardDescription>
+   627→                  Customize how admission numbers, student IDs, application IDs, and tracking numbers are generated when students apply and enroll
+   628→                </CardDescription>
+   629→              </CardHeader>
+   630→              <CardContent className="space-y-6">
+   631→                {/* Admission Number Section */}
+   632→                <div className="space-y-4 p-4 bg-teal-50/50 rounded-lg">
+   633→                  <div className="flex items-center gap-2">
+   634→                    <Hash className="h-4 w-4 text-teal-600" />
+   635→                    <h4 className="font-semibold text-gray-900">Admission Number Format</h4>
+   636→                  </div>
+   637→                  <p className="text-xs text-gray-500">
+   638→                    Generated when a student is enrolled. Format: <code className="bg-white px-1.5 py-0.5 rounded text-teal-700 font-mono">PREFIX-YEAR-NUMBER</code>
+   639→                  </p>
+   640→                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+   641→                    <div className="space-y-2">
+   642→                      <Label>Prefix</Label>
+   643→                      <Input
+   644→                        value={admissionForm.admission_prefix || ''}
+   645→                        onChange={(e) => setAdmissionForm({ ...admissionForm, admission_prefix: e.target.value.toUpperCase() })}
+   646→                        placeholder="ADM"
+   647→                        className="font-mono"
+   648→                      />
+   649→                    </div>
+   650→                    <div className="space-y-2">
+   651→                      <Label>Year</Label>
+   652→                      <Input
+   653→                        value={admissionForm.admission_year || ''}
+   654→                        onChange={(e) => setAdmissionForm({ ...admissionForm, admission_year: e.target.value })}
+   655→                        placeholder="2026"
+   656→                        className="font-mono"
+   657→                      />
+   658→                    </div>
+   659→                    <div className="space-y-2">
+   660→                      <Label>Number Padding</Label>
+   661→                      <Input
+   662→                        type="number"
+   663→                        min="1"
+   664→                        max="6"
+   665→                        value={admissionForm.admission_padding || ''}
+   666→                        onChange={(e) => setAdmissionForm({ ...admissionForm, admission_padding: e.target.value })}
+   667→                        placeholder="3"
+   668→                      />
+   669→                      <p className="text-xs text-gray-400">e.g., 3 = 001</p>
+   670→                    </div>
+   671→                    <div className="space-y-2">
+   672→                      <Label>Start Number</Label>
+   673→                      <Input
+   674→                        type="number"
+   675→                        min="1"
+   676→                        value={admissionForm.admission_start_number || ''}
+   677→                        onChange={(e) => setAdmissionForm({ ...admissionForm, admission_start_number: e.target.value })}
+   678→                        placeholder="1"
+   679→                      />
+   680→                    </div>
+   681→                  </div>
+   682→                  {/* Live Preview */}
+   683→                  <div className="flex items-center gap-2 p-3 bg-white rounded-lg border">
+   684→                    <span className="text-sm text-gray-500">Preview:</span>
+   685→                    <code className="text-lg font-bold text-teal-700 font-mono">
+   686→                      {admissionForm.admission_prefix || 'ADM'}-{admissionForm.admission_year || '2026'}-
+   687→                      {String(parseInt(admissionForm.admission_start_number || '1')).padStart(parseInt(admissionForm.admission_padding || '3'), '0')}
+   688→                    </code>
+   689→                  </div>
+   690→                </div>
+   691→
+   692→                {/* Student ID Section */}
+   693→                <div className="space-y-4 p-4 bg-blue-50/50 rounded-lg">
+   694→                  <div className="flex items-center gap-2">
+   695→                    <IdCard className="h-4 w-4 text-blue-600" />
+   696→                    <h4 className="font-semibold text-gray-900">Student ID Format</h4>
+   697→                  </div>
+   698→                  <p className="text-xs text-gray-500">
+   699→                    Generated for each enrolled student. Format: <code className="bg-white px-1.5 py-0.5 rounded text-blue-700 font-mono">PREFIX-YEAR-NUMBER</code>
+   700→                  </p>
+   701→                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+   702→                    <div className="space-y-2">
+   703→                      <Label>Prefix</Label>
+   704→                      <Input
+   705→                        value={admissionForm.student_id_prefix || ''}
+   706→                        onChange={(e) => setAdmissionForm({ ...admissionForm, student_id_prefix: e.target.value.toUpperCase() })}
+   707→                        placeholder="STU"
+   708→                        className="font-mono"
+   709→                      />
+   710→                    </div>
+   711→                    <div className="space-y-2">
+   712→                      <Label>Number Padding</Label>
+   713→                      <Input
+   714→                        type="number"
+   715→                        min="1"
+   716→                        max="6"
+   717→                        value={admissionForm.student_id_padding || ''}
+   718→                        onChange={(e) => setAdmissionForm({ ...admissionForm, student_id_padding: e.target.value })}
+   719→                        placeholder="3"
+   720→                      />
+   721→                    </div>
+   722→                    <div className="space-y-2">
+   723→                      <Label>Preview</Label>
+   724→                      <div className="h-10 flex items-center">
+   725→                        <code className="text-sm font-bold text-blue-700 font-mono">
+   726→                          {admissionForm.student_id_prefix || 'STU'}-{admissionForm.admission_year || '2026'}-
+   727→                          {String(parseInt(admissionForm.admission_start_number || '1')).padStart(parseInt(admissionForm.student_id_padding || '3'), '0')}
+   728→                        </code>
+   729→                      </div>
+   730→                    </div>
+   731→                  </div>
+   732→                </div>
+   733→
+   734→                {/* Application & Tracking IDs */}
+   735→                <div className="space-y-4 p-4 bg-purple-50/50 rounded-lg">
+   736→                  <div className="flex items-center gap-2">
+   737→                    <FileText className="h-4 w-4 text-purple-600" />
+   738→                    <h4 className="font-semibold text-gray-900">Application & Tracking Number Prefixes</h4>
+   739→                  </div>
+   740→                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   741→                    <div className="space-y-2">
+   742→                      <Label>Application ID Prefix</Label>
+   743→                      <Input
+   744→                        value={admissionForm.application_id_prefix || ''}
+   745→                        onChange={(e) => setAdmissionForm({ ...admissionForm, application_id_prefix: e.target.value.toUpperCase() })}
+   746→                        placeholder="APP"
+   747→                        className="font-mono"
+   748→                      />
+   749→                      <p className="text-xs text-gray-400">Preview: {admissionForm.application_id_prefix || 'APP'}-{admissionForm.admission_year || '2026'}-001</p>
+   750→                    </div>
+   751→                    <div className="space-y-2">
+   752→                      <Label>Tracking Number Prefix</Label>
+   753→                      <Input
+   754→                        value={admissionForm.tracking_prefix || ''}
+   755→                        onChange={(e) => setAdmissionForm({ ...admissionForm, tracking_prefix: e.target.value.toUpperCase() })}
+   756→                        placeholder="TRK"
+   757→                        className="font-mono"
+   758→                      />
+   759→                      <p className="text-xs text-gray-400">Preview: {admissionForm.tracking_prefix || 'TRK'}-{admissionForm.admission_year || '2026'}-XXXXXX</p>
+   760→                    </div>
+   761→                  </div>
+   762→                </div>
+   763→
+   764→                {/* Payment & Account Settings */}
+   765→                <div className="space-y-4 p-4 bg-amber-50/50 rounded-lg">
+   766→                  <div className="flex items-center gap-2">
+   767→                    <CreditCard className="h-4 w-4 text-amber-600" />
+   768→                    <h4 className="font-semibold text-gray-900">Payment & Account Defaults</h4>
+   769→                  </div>
+   770→                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   771→                    <div className="space-y-2">
+   772→                      <Label>Admission Processing Fee (ETB)</Label>
+   773→                      <Input
+   774→                        type="number"
+   775→                        value={admissionForm.admission_fee_amount || ''}
+   776→                        onChange={(e) => setAdmissionForm({ ...admissionForm, admission_fee_amount: e.target.value })}
+   777→                        placeholder="500"
+   778→                      />
+   779→                      <p className="text-xs text-gray-400">Default fee shown on the payment step</p>
+   780→                    </div>
+   781→                    <div className="space-y-2">
+   782→                      <Label>Default Student Password</Label>
+   783→                      <Input
+   784→                        value={admissionForm.admission_default_password || ''}
+   785→                        onChange={(e) => setAdmissionForm({ ...admissionForm, admission_default_password: e.target.value })}
+   786→                        placeholder="password123"
+   787→                      />
+   788→                      <p className="text-xs text-gray-400">Initial password for newly enrolled students</p>
+   789→                    </div>
+   790→                  </div>
+   791→                </div>
+   792→
+   793→                <div className="flex justify-end pt-4 border-t">
+   794→                  <Button onClick={() => saveTab('admission', admissionForm)} disabled={savingTab === 'admission'} className="bg-teal-700 hover:bg-teal-800">
+   795→                    <Save className="h-4 w-4 mr-2" />
+   796→                    {savingTab === 'admission' ? 'Saving...' : 'Save Admission Settings'}
+   797→                  </Button>
+   798→                </div>
+   799→              </CardContent>
+   800→            </Card>
+   801→          </TabsContent>
+   802→
+   803→          {/* ===== SOCIAL TAB ===== */}
+   804→          <TabsContent value="social" className="mt-6 space-y-4">
+   805→            <Card>
+   806→              <CardHeader>
+   807→                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+   808→                  <div>
+   809→                    <CardTitle className="flex items-center gap-2">
+   810→                      <Globe className="h-5 w-5 text-teal-600" />
+   811→                      Social Media Links
+   812→                    </CardTitle>
+   813→                    <CardDescription>Manage social media profiles shown on the website</CardDescription>
+   814→                  </div>
+   815→                  <Button onClick={openCreateSocial} className="bg-teal-700 hover:bg-teal-800">
+   816→                    <Plus className="h-4 w-4 mr-2" />
+   817→                    Add Link
+   818→                  </Button>
+   819→                </div>
+   820→              </CardHeader>
+   821→              <CardContent className="p-0">
+   822→                {socialLoading ? (
+   823→                  <div className="p-6 space-y-3">
+   824→                    {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+   825→                  </div>
+   826→                ) : socialLinks.length === 0 ? (
+   827→                  <div className="p-12 text-center">
+   828→                    <Globe className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+   829→                    <p className="text-gray-500">No social links yet</p>
+   830→                    <p className="text-xs text-gray-400 mt-1">Add your social media profiles to display them on the website.</p>
+   831→                  </div>
+   832→                ) : (
+   833→                  <div className="divide-y">
+   834→                    {socialLinks.map((link, i) => {
+   835→                      const platform = PLATFORMS.find((p) => p.value === link.platform)
+   836→                      const Icon = platform?.icon || Globe
+   837→                      return (
+   838→                        <motion.div
+   839→                          key={link.id}
+   840→                          initial={{ opacity: 0, x: -10 }}
+   841→                          animate={{ opacity: 1, x: 0 }}
+   842→                          transition={{ delay: Math.min(i * 0.05, 0.3) }}
+   843→                          className="flex items-center gap-4 p-4 hover:bg-gray-50"
+   844→                        >
+   845→                          <div
+   846→                            className="h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0"
+   847→                            style={{ backgroundColor: `${platform?.color || '#6b7280'}20` }}
+   848→                          >
+   849→                            <Icon className="h-5 w-5" style={{ color: platform?.color || '#6b7280' }} />
+   850→                          </div>
+   851→                          <div className="flex-1 min-w-0">
+   852→                            <div className="flex items-center gap-2">
+   853→                              <p className="font-medium text-gray-900 capitalize">{link.platform}</p>
+   854→                              <Badge variant="outline" className={link.active ? 'text-emerald-700 border-emerald-200' : 'text-gray-500'}>
+   855→                                {link.active ? 'Active' : 'Inactive'}
+   856→                              </Badge>
+   857→                            </div>
+   858→                            <a
+   859→                              href={link.url}
+   860→                              target="_blank"
+   861→                              rel="noopener noreferrer"
+   862→                              className="text-sm text-teal-700 hover:underline truncate flex items-center gap-1"
+   863→                            >
+   864→                              <ExternalLink className="h-3 w-3" />
+   865→                              {link.url}
+   866→                            </a>
+   867→                          </div>
+   868→                          <div className="flex items-center gap-1">
+   869→                            <Button variant="ghost" size="icon" onClick={() => openEditSocial(link)}>
+   870→                              <Edit className="h-4 w-4" />
+   871→                            </Button>
+   872→                            <Button variant="ghost" size="icon" className="text-red-600" onClick={() => setDeleteSocialId(link.id)}>
+   873→                              <Trash2 className="h-4 w-4" />
+   874→                            </Button>
+   875→                          </div>
+   876→                        </motion.div>
+   877→                      )
+   878→                    })}
+   879→                  </div>
+   880→                )}
+   881→              </CardContent>
+   882→            </Card>
+   883→          </TabsContent>
+   884→        </Tabs>
+   885→      )}
+   886→
+   887→      {/* Social Dialog */}
+   888→      <Dialog open={socialDialogOpen} onOpenChange={setSocialDialogOpen}>
+   889→        <DialogContent className="max-w-md">
+   890→          <DialogHeader>
+   891→            <DialogTitle>{editSocialId ? 'Edit Social Link' : 'Add Social Link'}</DialogTitle>
+   892→            <DialogDescription>{editSocialId ? 'Update social media profile' : 'Add a new social media profile'}</DialogDescription>
+   893→          </DialogHeader>
+   894→          <form onSubmit={handleSocialSubmit} className="space-y-4">
+   895→            <div className="space-y-2">
+   896→              <Label>Platform *</Label>
+   897→              <Select value={socialForm.platform} onValueChange={(v) => setSocialForm({ ...socialForm, platform: v })}>
+   898→                <SelectTrigger><SelectValue /></SelectTrigger>
+   899→                <SelectContent>
+   900→                  {PLATFORMS.map((p) => {
+   901→                    const Icon = p.icon
+   902→                    return (
+   903→                      <SelectItem key={p.value} value={p.value}>
+   904→                        <span className="flex items-center gap-2">
+   905→                          <Icon className="h-3.5 w-3.5" style={{ color: p.color }} />
+   906→                          {p.label}
+   907→                        </span>
+   908→                      </SelectItem>
+   909→                    )
+   910→                  })}
+   911→                </SelectContent>
+   912→              </Select>
+   913→            </div>
+   914→            <div className="space-y-2">
+   915→              <Label>Profile URL *</Label>
+   916→              <Input
+   917→                value={socialForm.url}
+   918→                onChange={(e) => setSocialForm({ ...socialForm, url: e.target.value })}
+   919→                placeholder="https://facebook.com/yourschool"
+   920→                required
+   921→              />
+   922→            </div>
+   923→            <div className="flex items-center justify-between rounded-lg border p-3">
+   924→              <div>
+   925→                <Label className="cursor-pointer">Active</Label>
+   926→                <p className="text-xs text-gray-500">Show this link on the website</p>
+   927→              </div>
+   928→              <Switch
+   929→                checked={!!socialForm.active}
+   930→                onCheckedChange={(v) => setSocialForm({ ...socialForm, active: v })}
+   931→              />
+   932→            </div>
+   933→            <DialogFooter>
+   934→              <Button type="button" variant="outline" onClick={() => setSocialDialogOpen(false)}>Cancel</Button>
+   935→              <Button type="submit" disabled={submittingSocial} className="bg-teal-700 hover:bg-teal-800">
+   936→                <Save className="h-4 w-4 mr-2" />
+   937→                {submittingSocial ? 'Saving...' : editSocialId ? 'Update' : 'Add'} Link
+   938→              </Button>
+   939→            </DialogFooter>
+   940→          </form>
+   941→        </DialogContent>
+   942→      </Dialog>
+   943→
+   944→      {/* Delete Social Confirmation */}
+   945→      <AlertDialog open={!!deleteSocialId} onOpenChange={(open) => !open && setDeleteSocialId(null)}>
+   946→        <AlertDialogContent>
+   947→          <AlertDialogHeader>
+   948→            <AlertDialogTitle>Delete Social Link?</AlertDialogTitle>
+   949→            <AlertDialogDescription>
+   950→              This will permanently remove the social media link from the website.
+   951→            </AlertDialogDescription>
+   952→          </AlertDialogHeader>
+   953→          <AlertDialogFooter>
+   954→            <AlertDialogCancel>Cancel</AlertDialogCancel>
+   955→            <AlertDialogAction onClick={handleSocialDelete} className="bg-red-600 hover:bg-red-700">
+   956→              Delete
+   957→            </AlertDialogAction>
+   958→          </AlertDialogFooter>
+   959→        </AlertDialogContent>
+   960→      </AlertDialog>
+   961→    </div>
+   962→  )
+   963→}
+   964→

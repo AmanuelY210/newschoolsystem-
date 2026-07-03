@@ -22,6 +22,7 @@ model User {
   phone        String?
   address      String?
   active       Boolean  @default(true)
+  language     String   @default("en") // preferred language code
   lastLoginAt  DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -35,6 +36,33 @@ model User {
   notifications Notification[]
   submissions  AssignmentSubmission[]
   sessions     Session[]
+}
+
+// ============ LANGUAGE MANAGEMENT ============
+
+model Language {
+  id          String   @id @default(cuid())
+  code        String   @unique // e.g. "en", "am", "om", "ti"
+  name        String   // e.g. "English", "አማርኛ"
+  nativeName  String?  // e.g. "English", "አማርኛ"
+  flag        String?  // emoji flag
+  enabled     Boolean  @default(true)
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  translations Translation[]
+}
+
+model Translation {
+  id          String   @id @default(cuid())
+  languageId  String
+  language    Language @relation(fields: [languageId], references: [id], onDelete: Cascade)
+  key         String   // translation key e.g. "dashboard.title"
+  value       String   // translated text
+  updatedAt   DateTime @updatedAt
+
+  @@unique([languageId, key])
 }
 
 model Session {

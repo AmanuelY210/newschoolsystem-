@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 
       // Monthly trend - last 6 months
       const now = new Date()
-      const monthlyTrend = []
+      const monthlyTrend: any[] = []
       for (let i = 5; i >= 0; i--) {
         const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1)
         const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 1)

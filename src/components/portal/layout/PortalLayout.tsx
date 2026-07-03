@@ -99,12 +99,13 @@ function SidebarContent({ user, navItems, currentModuleId, onNavigate, onViewWeb
         <nav className="space-y-1">
           {navItems.map((item, idx) => {
             if (item.type === 'module' && item.module) {
-              const Icon = item.module.icon
-              const isActive = currentModuleId === item.module.id
+              const mod = item.module
+              const Icon = mod.icon
+              const isActive = currentModuleId === mod.id
               return (
                 <button
-                  key={item.module.id}
-                  onClick={() => onNavigate(item.module.id)}
+                  key={mod.id}
+                  onClick={() => onNavigate(mod.id)}
                   className={cn(
                     'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                     isActive

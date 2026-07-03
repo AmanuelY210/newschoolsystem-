@@ -28,7 +28,7 @@ async function main() {
             gradeId: grade9.id,
             sectionId: sectionA?.id || null,
             subjectId: subject.id,
-            academicYear: '2026-2027',
+            academicYearName: '2026-2027',
           },
         })
         console.log(`✅ Assigned ${teacher.firstName} ${teacher.lastName} → ${grade9.name} ${sectionA?.name || ''} ${subject.name}`)

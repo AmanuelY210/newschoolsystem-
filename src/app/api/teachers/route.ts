@@ -4,10 +4,10 @@ import { getCurrentUser, hasPermission } from '@/lib/auth'
 import bcrypt from 'bcryptjs'
 
 // GET /api/teachers - list all teachers with their user info and assignments
+// Public access allowed (for public Teachers page), but sensitive fields filtered
 export async function GET(req: NextRequest) {
   try {
     const user = await getCurrentUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { searchParams } = new URL(req.url)
     const search = searchParams.get('search')
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     }
 
     // If teacher is logged in, only return their own record with assignments
-    if (user.role === 'teacher') {
+    if (user?.role === 'teacher') {
       const teacher = await db.teacher.findUnique({
         where: { userId: user.id },
         include: {

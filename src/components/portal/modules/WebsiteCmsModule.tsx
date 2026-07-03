@@ -135,7 +135,7 @@ function PageEditor({ slug, onBack }: { slug: string; onBack: () => void }) {
   const [pageData, setPageData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set([0]))
+  const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set<number>([0]))
 
   const schema = PAGE_SCHEMAS.find((s) => s.slug === slug)
 

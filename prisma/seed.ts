@@ -69,7 +69,7 @@ async function main() {
   })
 
   // ============ CREATE GRADES & SECTIONS ============
-  const grades = []
+  const grades: any[] = []
   for (let i = 1; i <= 12; i++) {
     grades.push(await db.grade.create({
       data: { name: `Grade ${i}`, level: i },
@@ -94,7 +94,7 @@ async function main() {
     { name: 'ICT', code: 'ICT' },
   ]
 
-  const subjectRecords = []
+  const subjectRecords: any[] = []
   for (const s of subjects) {
     subjectRecords.push(await db.subject.create({
       data: { name: s.name, code: s.code, gradeId: grades[8].id },

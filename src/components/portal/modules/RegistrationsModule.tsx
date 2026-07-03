@@ -56,7 +56,7 @@ export function RegistrationsModule() {
   // Enrollment result
   const [enrollResult, setEnrollResult] = useState<any>(null)
 
-  const queryParts = []
+  const queryParts: string[] = []
   if (statusFilter !== 'all') queryParts.push(`status=${encodeURIComponent(statusFilter)}`)
   if (search) queryParts.push(`search=${encodeURIComponent(search)}`)
   const query = queryParts.length ? `?${queryParts.join('&')}` : ''

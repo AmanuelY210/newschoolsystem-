@@ -197,7 +197,7 @@ export function PublicFooter() {
               </li>
             </ul>
             <button
-              onClick={() => go('admissions')}
+              onClick={() => go('admission-portal')}
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700 transition-colors"
             >
               Apply Now

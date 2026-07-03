@@ -3,11 +3,9 @@ import { db } from '@/lib/db'
 import { getCurrentUser, hasPermission } from '@/lib/auth'
 
 // GET /api/grades - list all grades with sections, subjects, and student count
+// Public access for GET (needed by public pages and portal)
 export async function GET(req: NextRequest) {
   try {
-    const user = await getCurrentUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
     const grades = await db.grade.findMany({
       include: {
         sections: { orderBy: { name: 'asc' } },

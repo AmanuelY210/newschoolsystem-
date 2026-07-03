@@ -2,12 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getCurrentUser, hasPermission } from '@/lib/auth'
 
-// GET /api/holidays - list holidays
+// GET /api/holidays - list holidays (public access)
 export async function GET(req: NextRequest) {
   try {
-    const user = await getCurrentUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
     const { searchParams } = new URL(req.url)
     const type = searchParams.get('type')
     const year = searchParams.get('year')

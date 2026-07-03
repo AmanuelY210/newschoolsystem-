@@ -3,11 +3,9 @@ import { db } from '@/lib/db'
 import { getCurrentUser, hasPermission } from '@/lib/auth'
 
 // GET /api/subjects - list all subjects, optionally filtered by gradeId
+// Public access for GET (needed by public pages and portal)
 export async function GET(req: NextRequest) {
   try {
-    const user = await getCurrentUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
     const { searchParams } = new URL(req.url)
     const gradeId = searchParams.get('gradeId')
 

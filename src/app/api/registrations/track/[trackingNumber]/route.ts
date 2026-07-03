@@ -41,7 +41,7 @@ export async function GET(
     }
 
     // Build status timeline
-    const timeline = []
+    const timeline: any[] = []
     timeline.push({
       step: 'Application Submitted',
       status: 'completed',

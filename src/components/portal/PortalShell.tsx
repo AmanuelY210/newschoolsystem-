@@ -38,7 +38,6 @@ import { GradingSystemModule } from './modules/GradingSystemModule'
 import { AttendanceSettingsModule } from './modules/AttendanceSettingsModule'
 import { CalendarModule } from './modules/CalendarModule'
 import { HolidaysModule } from './modules/HolidaysModule'
-import { LanguageManagementModule } from './modules/LanguageManagementModule'
 
 const MODULE_COMPONENTS: Record<string, React.ComponentType> = {
   dashboard: DashboardModule,
@@ -51,7 +50,6 @@ const MODULE_COMPONENTS: Record<string, React.ComponentType> = {
   library: LibraryModule,
   'website-cms': WebsiteCmsModule,
   'website-settings': WebsiteSettingsModule,
-  languages: LanguageManagementModule,
   ranks: RanksModule,
   reports: ReportsModule,
   promotions: PromotionsModule,

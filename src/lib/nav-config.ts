@@ -11,7 +11,6 @@ import {
   ClipboardList as ClipboardListIcon, GraduationCap as GradIcon,
   Scale, CalendarClock, PartyPopper, SlidersHorizontal, Wrench,
   ChevronDown, UserCheck, FileBarChart as FileBarChartIcon,
-  Languages,
 } from 'lucide-react'
 
 export interface NavModule {
@@ -75,7 +74,6 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
     { type: 'module', module: { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard } },
     { type: 'module', module: { id: 'website-cms', label: 'Website CMS', icon: Globe } },
     { type: 'module', module: { id: 'website-settings', label: 'Website Settings', icon: Settings } },
-    { type: 'module', module: { id: 'languages', label: 'Language Management', icon: Languages } },
     { type: 'module', module: { id: 'schools', label: 'Schools', icon: Building2 } },
     {
       type: 'group',

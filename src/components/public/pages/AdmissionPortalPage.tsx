@@ -410,9 +410,10 @@ export function AdmissionPortalPage() {
                       <div className="space-y-2">
                         <Label>Grade Average</Label>
                         <div className="flex items-center gap-2">
-                          <Input type="number" step="0.1" value={formData.gradeAverage} onChange={(e) => updateField('gradeAverage', e.target.value + '%')} placeholder="e.g., 75.5%" />
+                          <Input type="number" step="0.1" min="0" max="100" value={formData.gradeAverage} onChange={(e) => updateField('gradeAverage', e.target.value)} placeholder="e.g., 75.5" />
                           <span className="text-gray-500">%</span>
                         </div>
+                        <p className="text-xs text-gray-400">Enter your average grade percentage (0-100)</p>
                       </div>
                       <div className="space-y-2">
                         <Label>Registration Condition <span className="text-red-500">*</span></Label>

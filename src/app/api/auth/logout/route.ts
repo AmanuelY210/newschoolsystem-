@@ -6,7 +6,7 @@ export async function POST() {
   try {
     const cookieStore = await cookies()
     const token = cookieStore.get(getSessionCookieName())?.value
-    if (token) destroySession(token)
+    if (token) await destroySession(token)
     await clearSessionCookie()
     return NextResponse.json({ success: true })
   } catch (error) {

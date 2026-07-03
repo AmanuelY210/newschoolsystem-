@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs'
+import { db } from './db'
 
 export interface SessionUser {
   id: string
@@ -11,13 +12,6 @@ export interface SessionUser {
 const SESSION_COOKIE = 'sms_session'
 const SESSION_EXPIRY_DAYS = 7
 
-// Session store - persisted globally to survive HMR in development
-const globalForSessions = globalThis as unknown as {
-  __smsSessions?: Map<string, { user: SessionUser; expires: number }>
-}
-const sessions = globalForSessions.__smsSessions ?? new Map<string, { user: SessionUser; expires: number }>()
-if (process.env.NODE_ENV !== 'production') globalForSessions.__smsSessions = sessions
-
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10)
 }
@@ -26,31 +20,45 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash)
 }
 
+// Database-backed session - persists across server restarts
 export async function createSession(user: SessionUser): Promise<string> {
   const token = generateToken()
-  const expires = Date.now() + SESSION_EXPIRY_DAYS * 24 * 60 * 60 * 1000
-  sessions.set(token, { user, expires })
+  const expires = new Date(Date.now() + SESSION_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
+  await db.session.create({
+    data: {
+      token,
+      userId: user.id,
+      expires,
+    },
+  })
   return token
 }
 
-export function getSession(token?: string): SessionUser | null {
+export async function getSession(token?: string): Promise<SessionUser | null> {
   if (!token) return null
-  const session = sessions.get(token)
+  const session = await db.session.findUnique({
+    where: { token },
+    include: { user: true },
+  })
   if (!session) return null
-  if (session.expires < Date.now()) {
-    sessions.delete(token)
+  if (session.expires < new Date()) {
+    await db.session.delete({ where: { id: session.id } }).catch(() => {})
     return null
   }
-  return session.user
+  return {
+    id: session.user.id,
+    email: session.user.email,
+    name: session.user.name,
+    role: session.user.role,
+    avatar: session.user.avatar,
+  }
 }
 
-export function destroySession(token: string): void {
-  sessions.delete(token)
+export async function destroySession(token: string): Promise<void> {
+  await db.session.deleteMany({ where: { token } }).catch(() => {})
 }
 
 // Dynamic import of next/headers keeps this module client-bundle-safe
-// (only `hasPermission` / `ROLE_PERMISSIONS` are imported from client components).
-// Tree-shaking removes these async functions from client bundles.
 export async function getCurrentUser(): Promise<SessionUser | null> {
   const { cookies } = await import('next/headers')
   const cookieStore = await cookies()

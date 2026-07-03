@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyPassword, createSession, setSessionCookie } from '@/lib/auth'
+import { firebaseSet, firebasePush } from '@/lib/firebase'
 
 export async function POST(req: NextRequest) {
   try {
@@ -43,6 +44,23 @@ export async function POST(req: NextRequest) {
 
     const token = await createSession(sessionUser)
     await setSessionCookie(token)
+
+    // Sync user presence to Firebase
+    await firebaseSet(`presence/${user.id}`, {
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      online: true,
+      lastSeen: new Date().toISOString(),
+    })
+
+    // Log login event to Firebase
+    await firebasePush('events/logins', {
+      userId: user.id,
+      name: user.name,
+      role: user.role,
+      timestamp: new Date().toISOString(),
+    })
 
     return NextResponse.json({
       user: sessionUser,

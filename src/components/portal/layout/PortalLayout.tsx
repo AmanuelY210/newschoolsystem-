@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useWebSocket } from '@/lib/use-websocket'
+import { useOnlineUsers, useFirebasePresence } from '@/lib/use-firebase'
 import { useToast } from '@/components/ui/use-toast'
 import { cn } from '@/lib/utils'
 
@@ -200,6 +201,13 @@ export function PortalLayout({ children }: PortalLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [settings, setSettings] = useState<Record<string, string>>({})
 
+  // Firebase real-time presence
+  const firebaseOnlineCount = useOnlineUsers(5000)
+  useFirebasePresence(user?.id || null, user?.name || null, user?.role || null)
+
+  // Use Firebase count if WebSocket count is 0
+  const displayOnlineCount = onlineCount > 0 ? onlineCount : firebaseOnlineCount
+
   useEffect(() => {
     const fetchSettings = () => {
       fetch('/api/settings')
@@ -290,7 +298,7 @@ export function PortalLayout({ children }: PortalLayoutProps) {
             {/* Online indicator */}
             <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 border border-green-200">
               <div className={cn('h-2 w-2 rounded-full', connected ? 'bg-green-500 animate-pulse' : 'bg-gray-400')} />
-              <span className="text-xs font-medium text-green-700">{onlineCount} online</span>
+              <span className="text-xs font-medium text-green-700">{displayOnlineCount} online</span>
             </div>
 
             {/* Notifications */}

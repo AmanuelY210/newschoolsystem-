@@ -39,40 +39,202 @@ model User {
 // ============ ACADEMIC CORE ============
 
 model Grade {
-  id        String   @id @default(cuid())
-  name      String   @unique // e.g. "Grade 1", "Grade 9", "Grade 12"
-  level     Int      // numeric level for ordering
-  createdAt DateTime @default(now())
+  id              String   @id @default(cuid())
+  name            String   @unique // e.g. "Grade 1", "Grade 9", "Grade 12"
+  code            String?  // e.g. "G9", "G10"
+  level           Int      // numeric level for ordering
+  educationLevel  String   @default("secondary") // primary, secondary, high_school
+  description     String?
+  status          String   @default("active")
+  createdAt       DateTime @default(now())
 
-  students  Student[]
-  subjects  Subject[]
-  sections  Section[]
+  students        Student[]
+  subjects        Subject[]
+  sections        Section[]
   teacherAssignments TeacherAssignment[]
+  timetables      Timetable[]
+  exams           Exam[]
 }
 
 model Section {
-  id        String   @id @default(cuid())
-  name      String   // e.g. "A", "B", "C"
-  gradeId   String
-  grade     Grade    @relation(fields: [gradeId], references: [id])
-  capacity  Int      @default(40)
-  createdAt DateTime @default(now())
+  id              String   @id @default(cuid())
+  name            String   // e.g. "A", "B", "C"
+  gradeId         String
+  grade           Grade    @relation(fields: [gradeId], references: [id])
+  capacity        Int      @default(40)
+  roomNumber      String?
+  classTeacherId  String?  // Teacher ID who is the class teacher
+  status          String   @default("active")
+  createdAt       DateTime @default(now())
 
-  students Student[]
+  students        Student[]
   teacherAssignments TeacherAssignment[]
+  timetables      Timetable[]
 }
 
 model Subject {
-  id        String   @id @default(cuid())
-  name      String   // e.g. "Mathematics", "English"
-  code      String   @unique
-  gradeId   String?
-  grade     Grade?   @relation(fields: [gradeId], references: [id])
-  createdAt DateTime @default(now())
+  id              String   @id @default(cuid())
+  name            String   // e.g. "Mathematics", "English"
+  code            String   @unique
+  gradeId         String?
+  grade           Grade?   @relation(fields: [gradeId], references: [id])
+  creditHours     Int      @default(1)
+  passingMarks    Float    @default(50)
+  totalMarks      Float    @default(100)
+  status          String   @default("active")
+  createdAt       DateTime @default(now())
 
-  marks     Mark[]
-  assignments Assignment[]
+  marks           Mark[]
+  assignments     Assignment[]
   teacherAssignments TeacherAssignment[]
+  curricula       Curriculum[]
+  lessonPlans     LessonPlan[]
+  timetables      Timetable[]
+  exams           Exam[]
+}
+
+model AcademicYear {
+  id          String   @id @default(cuid())
+  name        String   @unique // e.g. "2026-2027"
+  startDate   DateTime
+  endDate     DateTime
+  isCurrent   Boolean  @default(false)
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+
+  semesters   Semester[]
+  teacherAssignments TeacherAssignment[]
+  curricula   Curriculum[]
+  exams       Exam[]
+}
+
+model Semester {
+  id              String   @id @default(cuid())
+  academicYearId  String
+  academicYear    AcademicYear @relation(fields: [academicYearId], references: [id])
+  name            String   // e.g. "Semester 1", "Term 1"
+  startDate       DateTime
+  endDate         DateTime
+  status          String   @default("active")
+  createdAt       DateTime @default(now())
+}
+
+// Enhanced TeacherAssignment with more fields
+model TeacherAssignment {
+  id              String   @id @default(cuid())
+  teacherId       String
+  teacher         Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  gradeId         String
+  grade           Grade    @relation(fields: [gradeId], references: [id])
+  sectionId       String?
+  section         Section? @relation(fields: [sectionId], references: [id])
+  subjectId       String
+  subject         Subject  @relation(fields: [subjectId], references: [id])
+  academicYearId  String?
+  academicYear    AcademicYear? @relation(fields: [academicYearId], references: [id])
+  academicYearName String? // e.g. "2026-2027" (for backward compat)
+  campus          String?
+  weeklyPeriods   Int      @default(0)
+  room            String?
+  status          String   @default("active") // active, inactive
+  createdAt       DateTime @default(now())
+
+  @@unique([teacherId, gradeId, sectionId, subjectId])
+}
+
+model Curriculum {
+  id              String   @id @default(cuid())
+  academicYearId  String?
+  academicYear    AcademicYear? @relation(fields: [academicYearId], references: [id])
+  subjectId       String
+  subject         Subject  @relation(fields: [subjectId], references: [id])
+  title           String
+  description     String?
+  topics          String?  // JSON array of topics
+  objectives      String?
+  createdAt       DateTime @default(now())
+}
+
+model LessonPlan {
+  id              String   @id @default(cuid())
+  subjectId       String
+  subject         Subject  @relation(fields: [subjectId], references: [id])
+  teacherId       String?
+  teacher         Teacher? @relation(fields: [teacherId], references: [id])
+  title           String
+  description     String?
+  content         String?
+  date            DateTime?
+  duration        Int?     // minutes
+  fileUrl         String?
+  createdAt       DateTime @default(now())
+}
+
+model Timetable {
+  id              String   @id @default(cuid())
+  gradeId         String
+  grade           Grade    @relation(fields: [gradeId], references: [id])
+  sectionId       String?
+  section         Section? @relation(fields: [sectionId], references: [id])
+  subjectId       String
+  subject         Subject  @relation(fields: [subjectId], references: [id])
+  teacherId       String?
+  teacher         Teacher? @relation(fields: [teacherId], references: [id])
+  dayOfWeek       String   // Monday, Tuesday, etc.
+  startTime       String   // e.g. "08:00"
+  endTime         String   // e.g. "08:45"
+  room            String?
+  academicYear    String?
+  createdAt       DateTime @default(now())
+}
+
+model ExamType {
+  id              String   @id @default(cuid())
+  name            String   @unique // e.g. "Midterm", "Final", "Quiz"
+  description     String?
+  totalMarks      Float    @default(100)
+  weight          Float    @default(100) // percentage weight in final grade
+  createdAt       DateTime @default(now())
+
+  exams           Exam[]
+}
+
+model Exam {
+  id              String   @id @default(cuid())
+  examTypeId      String
+  examType        ExamType @relation(fields: [examTypeId], references: [id])
+  academicYearId  String?
+  academicYear    AcademicYear? @relation(fields: [academicYearId], references: [id])
+  name            String
+  gradeId         String?
+  grade           Grade?  @relation(fields: [gradeId], references: [id])
+  subjectId       String?
+  subject         Subject? @relation(fields: [subjectId], references: [id])
+  examDate        DateTime
+  totalMarks      Float    @default(100)
+  passingMarks    Float    @default(50)
+  status          String   @default("scheduled") // scheduled, ongoing, completed
+  createdAt       DateTime @default(now())
+}
+
+model GradingSystem {
+  id              String   @id @default(cuid())
+  name            String   @unique // e.g. "Standard Grading", "GPA"
+  minPercentage   Float
+  maxPercentage   Float
+  grade           String   // e.g. "A+", "A", "B+"
+  gradePoint      Float    @default(0)
+  description     String?
+  createdAt       DateTime @default(now())
+}
+
+model Holiday {
+  id              String   @id @default(cuid())
+  name            String
+  date            DateTime
+  type            String   @default("holiday") // holiday, event, exam
+  description     String?
+  createdAt       DateTime @default(now())
 }
 
 model Student {
@@ -136,23 +298,8 @@ model Teacher {
   assignments  Assignment[]
   attendance   Attendance[]
   teacherAssignments TeacherAssignment[]
-}
-
-// Teacher assignments - links teacher to specific grade/section/subject
-model TeacherAssignment {
-  id          String   @id @default(cuid())
-  teacherId   String
-  teacher     Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  gradeId     String
-  grade       Grade    @relation(fields: [gradeId], references: [id])
-  sectionId   String?
-  section     Section? @relation(fields: [sectionId], references: [id])
-  subjectId   String
-  subject     Subject  @relation(fields: [subjectId], references: [id])
-  academicYear String? // e.g. "2026-2027"
-  createdAt   DateTime @default(now())
-
-  @@unique([teacherId, gradeId, sectionId, subjectId])
+  lessonPlans  LessonPlan[]
+  timetables   Timetable[]
 }
 
 // ============ ACADEMIC RECORDS ============

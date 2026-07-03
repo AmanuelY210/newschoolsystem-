@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAppStore, UserRole } from '@/lib/store'
-import { ROLE_MODULES, ROLE_LABELS, ROLE_COLORS } from '@/lib/nav-config'
+import { ROLE_NAV, ROLE_LABELS, ROLE_COLORS, NavItem } from '@/lib/nav-config'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -10,7 +10,7 @@ import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   GraduationCap, Menu, LogOut, Bell, Globe, ChevronDown,
-  User, Home
+  User, Home, ChevronRight
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -30,7 +30,7 @@ interface PortalLayoutProps {
 
 interface SidebarContentProps {
   user: { name: string; role: string; email: string }
-  modules: { id: string; label: string; icon: any }[]
+  navItems: NavItem[]
   currentModuleId: string
   onNavigate: (moduleId: string) => void
   onViewWebsite: () => void
@@ -38,7 +38,7 @@ interface SidebarContentProps {
   settings: Record<string, string>
 }
 
-function SidebarContent({ user, modules, currentModuleId, onNavigate, onViewWebsite, onLogout, settings }: SidebarContentProps) {
+function SidebarContent({ user, navItems, currentModuleId, onNavigate, onViewWebsite, onLogout, settings }: SidebarContentProps) {
   const initials = user.name
     .split(' ')
     .map((n) => n[0])
@@ -49,6 +49,16 @@ function SidebarContent({ user, modules, currentModuleId, onNavigate, onViewWebs
   const schoolName = settings.school_name || 'Bright Future Academy'
   const portalName = settings.portal_name || 'Portal'
   const logo = settings.logo || ''
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+
+  const toggleGroup = (groupId: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(groupId)) next.delete(groupId)
+      else next.add(groupId)
+      return next
+    })
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -87,24 +97,76 @@ function SidebarContent({ user, modules, currentModuleId, onNavigate, onViewWebs
       {/* Navigation */}
       <ScrollArea className="flex-1 px-3 py-3">
         <nav className="space-y-1">
-          {modules.map((module) => {
-            const Icon = module.icon
-            const isActive = currentModuleId === module.id
-            return (
-              <button
-                key={module.id}
-                onClick={() => onNavigate(module.id)}
-                className={cn(
-                  'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                  isActive
-                    ? 'bg-teal-700 text-white shadow-sm'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                )}
-              >
-                <Icon className="h-4 w-4 flex-shrink-0" />
-                <span className="truncate">{module.label}</span>
-              </button>
-            )
+          {navItems.map((item, idx) => {
+            if (item.type === 'module' && item.module) {
+              const Icon = item.module.icon
+              const isActive = currentModuleId === item.module.id
+              return (
+                <button
+                  key={item.module.id}
+                  onClick={() => onNavigate(item.module.id)}
+                  className={cn(
+                    'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                    isActive
+                      ? 'bg-teal-700 text-white shadow-sm'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  )}
+                >
+                  <Icon className="h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">{item.module.label}</span>
+                </button>
+              )
+            }
+
+            if (item.type === 'group' && item.group) {
+              const group = item.group
+              const GroupIcon = group.icon
+              const isExpanded = expandedGroups.has(group.id)
+              const hasActiveChild = group.modules.some((m) => m.id === currentModuleId)
+
+              return (
+                <div key={group.id}>
+                  <button
+                    onClick={() => toggleGroup(group.id)}
+                    className={cn(
+                      'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                      hasActiveChild
+                        ? 'text-teal-700 bg-teal-50'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    )}
+                  >
+                    <GroupIcon className="h-4 w-4 flex-shrink-0" />
+                    <span className="truncate flex-1 text-left">{group.label}</span>
+                    <ChevronRight className={cn('h-3.5 w-3.5 transition-transform', isExpanded && 'rotate-90')} />
+                  </button>
+                  {isExpanded && (
+                    <div className="ml-4 mt-0.5 space-y-0.5 border-l border-gray-200 pl-2">
+                      {group.modules.map((module) => {
+                        const Icon = module.icon
+                        const isActive = currentModuleId === module.id
+                        return (
+                          <button
+                            key={module.id}
+                            onClick={() => onNavigate(module.id)}
+                            className={cn(
+                              'w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors',
+                              isActive
+                                ? 'bg-teal-700 text-white shadow-sm'
+                                : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
+                            )}
+                          >
+                            <Icon className="h-3.5 w-3.5 flex-shrink-0" />
+                            <span className="truncate">{module.label}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
+            return null
           })}
         </nav>
       </ScrollArea>
@@ -146,8 +208,14 @@ export function PortalLayout({ children }: PortalLayoutProps) {
 
   if (!user) return null
 
-  const modules = ROLE_MODULES[user.role as UserRole] || []
-  const currentModule = modules.find((m) => m.id === portalModule) || modules[0]
+  const navItems = ROLE_NAV[user.role as UserRole] || []
+  // Flatten modules to find current module for the header title
+  const allModules = navItems.flatMap((item) => {
+    if (item.type === 'module' && item.module) return [item.module]
+    if (item.type === 'group' && item.group) return item.group.modules
+    return []
+  })
+  const currentModule = allModules.find((m) => m.id === portalModule) || allModules[0]
 
   const initials = user.name
     .split(' ')
@@ -168,7 +236,7 @@ export function PortalLayout({ children }: PortalLayoutProps) {
 
   const sidebarProps = {
     user: { name: user.name, role: user.role, email: user.email },
-    modules,
+    navItems,
     currentModuleId: currentModule?.id || 'dashboard',
     onNavigate: handleNavigate,
     onViewWebsite: () => navigateToPublic('home'),

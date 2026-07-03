@@ -23,6 +23,21 @@ import { RegistrationsModule } from './modules/RegistrationsModule'
 import { MessagesModule } from './modules/MessagesModule'
 import { EventsModule } from './modules/EventsModule'
 import { ProfileModule } from './modules/ProfileModule'
+import { AcademicYearModule } from './modules/AcademicYearModule'
+import { SemesterModule } from './modules/SemesterModule'
+import { GradeModule } from './modules/GradeModule'
+import { SectionModule } from './modules/SectionModule'
+import { SubjectModule } from './modules/SubjectModule'
+import { TeacherAssignmentModule } from './modules/TeacherAssignmentModule'
+import { ClassTeacherModule } from './modules/ClassTeacherModule'
+import { CurriculumModule } from './modules/CurriculumModule'
+import { LessonPlanModule } from './modules/LessonPlanModule'
+import { TimetableModule } from './modules/TimetableModule'
+import { ExamModule } from './modules/ExamModule'
+import { GradingSystemModule } from './modules/GradingSystemModule'
+import { AttendanceSettingsModule } from './modules/AttendanceSettingsModule'
+import { CalendarModule } from './modules/CalendarModule'
+import { HolidaysModule } from './modules/HolidaysModule'
 
 const MODULE_COMPONENTS: Record<string, React.ComponentType> = {
   dashboard: DashboardModule,
@@ -45,6 +60,21 @@ const MODULE_COMPONENTS: Record<string, React.ComponentType> = {
   messages: MessagesModule,
   events: EventsModule,
   profile: ProfileModule,
+  'academic-year': AcademicYearModule,
+  semester: SemesterModule,
+  grades: GradeModule,
+  sections: SectionModule,
+  subjects: SubjectModule,
+  'teacher-assignment': TeacherAssignmentModule,
+  'class-teacher': ClassTeacherModule,
+  curriculum: CurriculumModule,
+  'lesson-plan': LessonPlanModule,
+  timetable: TimetableModule,
+  exams: ExamModule,
+  'grading-system': GradingSystemModule,
+  'attendance-settings': AttendanceSettingsModule,
+  'school-calendar': CalendarModule,
+  holidays: HolidaysModule,
 }
 
 export function PortalShell() {

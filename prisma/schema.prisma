@@ -47,6 +47,7 @@ model Grade {
   students  Student[]
   subjects  Subject[]
   sections  Section[]
+  teacherAssignments TeacherAssignment[]
 }
 
 model Section {
@@ -58,6 +59,7 @@ model Section {
   createdAt DateTime @default(now())
 
   students Student[]
+  teacherAssignments TeacherAssignment[]
 }
 
 model Subject {
@@ -70,6 +72,7 @@ model Subject {
 
   marks     Mark[]
   assignments Assignment[]
+  teacherAssignments TeacherAssignment[]
 }
 
 model Student {
@@ -121,14 +124,35 @@ model Teacher {
   address      String?
   joinDate     DateTime @default(now())
   salary       Float    @default(0)
-  status       String   @default("active")
+  status       String   @default("active") // active, inactive, locked
   photoUrl     String?
+  // Assignment scope - teacher can only access assigned academic year/grade/section/subjects
+  academicYear String?  // e.g. "2026-2027"
+  campus       String?  // school/campus name
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   marks        Mark[]
   assignments  Assignment[]
   attendance   Attendance[]
+  teacherAssignments TeacherAssignment[]
+}
+
+// Teacher assignments - links teacher to specific grade/section/subject
+model TeacherAssignment {
+  id          String   @id @default(cuid())
+  teacherId   String
+  teacher     Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  gradeId     String
+  grade       Grade    @relation(fields: [gradeId], references: [id])
+  sectionId   String?
+  section     Section? @relation(fields: [sectionId], references: [id])
+  subjectId   String
+  subject     Subject  @relation(fields: [subjectId], references: [id])
+  academicYear String? // e.g. "2026-2027"
+  createdAt   DateTime @default(now())
+
+  @@unique([teacherId, gradeId, sectionId, subjectId])
 }
 
 // ============ ACADEMIC RECORDS ============

@@ -652,3 +652,87 @@ Stage Summary:
 - Student has view-only access with homework submission and fee status
 - Finance and Library roles are restricted to their domains
 - Lint passes cleanly
+
+---
+Task ID: TEACHER-ASSIGNMENT-UI
+Agent: Main (Z.ai Code)
+Task: Update TeachersModule with assignment management, password reset, status controls, and academicYear/campus fields
+
+Work Log:
+- Reviewed worklog.md, prisma schema, /api/teachers (GET/POST/PUT), /api/grades, /api/subjects, use-api.ts, store.ts, and tabs UI component to understand data shapes and constraints
+- Added new state: activeTab (profile/assignments/security), assignments working copy, newAssignment form, resetPasswordTeacher/newPassword/resettingPassword
+- Added `academicYear`, `campus`, `status` to `emptyTeacher` and `openEdit`
+- Added `canManage = role === 'admin' || role === 'super_admin'` flag gating assignment/password/status/salary features
+- Edit dialog now uses Tabs (Profile / Assignments / Security) for admin/super_admin when editing; falls back to single-column Profile form for create and non-admin edits
+- Profile tab: existing fields + new Academic Year and Campus inputs; Salary field only shown to canManage
+- Assignments tab: list of current assignments with remove buttons + add-new form (grade drives section + subject dropdowns; section supports "All Sections"; subjects fetched via /api/subjects?gradeId=)
+- Security tab: status selector (Active/Inactive/Locked large buttons) saved with form + Reset Password button that opens dedicated dialog
+- View dialog: status badge in header, Academic Year + Campus in info grid, new "Assigned Classes & Subjects" card with badges, admin-only section with quick status toggle buttons (Activate/Deactivate/Lock) + Edit Profile / Manage Assignments / Reset Password action buttons
+- Added dedicated Reset Password dialog with new-password input (min 6 chars), "Use default" and "Generate random" helpers; calls PUT /api/teachers/[id] with { resetPassword }; success toast displays the new password
+- handleSubmit: edit+canManage sends { ...form, assignments: [...] } with sectionId 'all' → null; edit non-admin strips status/salary; create unchanged
+- Added statusBadge() helper using STATUS_OPTIONS constant (active=green, inactive=gray, locked=red, legacy fallback amber) — used in both table and view dialog header
+- Preserved teal/emerald theme, responsive layout, framer-motion stats, existing CRUD functionality
+- Teachers viewing their own profile see assignments read-only with no admin action buttons (gated by canManage)
+
+Verification:
+- `bun run lint` — passes with no errors/warnings
+- `npx tsc --noEmit` — no TeachersModule errors
+- Dev server: "✓ Compiled in 499ms" (no compile errors)
+
+Stage Summary:
+- TeachersModule fully upgraded with assignment management, password reset, status management, and academicYear/campus fields
+- All admin/super_admin features gated behind canManage; teachers see read-only assignments
+- Existing CRUD (create/edit/delete teachers) preserved
+- Work record saved to /agent-ctx/TEACHER-ASSIGNMENT-UI-main.md
+
+---
+Task ID: TEACHER-ASSIGNMENT-SYSTEM
+Agent: Main (Claude)
+Task: Implement teacher assignment system - teachers only access assigned subjects/classes
+
+Work Log:
+- Updated Prisma schema:
+  - Added TeacherAssignment model (teacherId, gradeId, sectionId, subjectId, academicYear)
+  - Added academicYear and campus fields to Teacher model
+  - Added teacherAssignments relations to Grade, Section, and Subject models
+  - Added @@unique constraint on [teacherId, gradeId, sectionId, subjectId]
+- Updated teachers API (route.ts):
+  - GET now includes teacherAssignments with grade/section/subject
+  - Teachers only see their own record with assignments
+  - POST accepts academicYear and campus fields
+- Updated teachers [id] API:
+  - GET includes teacherAssignments
+  - PUT supports: resetPassword (admin), assignments array (admin), status changes (admin)
+  - Teachers can only edit own profile fields, not status/salary/assignments
+  - Admin can activate/deactivate/lock teacher accounts (syncs to User.active)
+- Updated marks API GET:
+  - Teachers only see marks for their assigned subjects (filtered by teacherAssignments)
+  - Students only see their own marks
+- Updated attendance API GET:
+  - Teachers only see attendance they recorded
+  - Students only see their own attendance
+- Updated assignments API GET:
+  - Teachers only see their own assignments (filtered by teacherAssignments subjects)
+  - Students only see assignments for their grade's subjects
+- Updated TeachersModule component:
+  - 3-tab edit dialog: Profile, Assignments (with count badge), Security
+  - Assignment management: view/add/remove assignments (grade/section/subject/academicYear)
+  - Password reset: dialog with "Use default" and "Generate random" helpers
+  - Status management: activate/deactivate/lock buttons + status badges in table
+  - View dialog shows "Assigned Classes & Subjects" card
+  - Permission gating: only admin/super_admin can manage assignments, reset passwords, change status
+- Seeded teacher assignments:
+  - Abebe Bekele → Grade 9 A Mathematics
+  - Sara Mohamed → Grade 9 A English
+  - Dawit Tadesse → Grade 9 A Amharic
+  - Meriem Hassan → Grade 9 A Physics
+  - Yonas Girma → Grade 9 A Chemistry
+  - Fatima Ahmed → Grade 9 A Biology
+
+Stage Summary:
+- Teachers can ONLY access their assigned subjects, classes, and sections
+- School Admin can: create teacher accounts, assign classes/sections/subjects, reset passwords, activate/deactivate/lock accounts
+- Teachers can: change own password, update profile, upload photo
+- Teachers CANNOT: view other teachers' subjects, enter marks for unassigned subjects, create teacher accounts, assign classes
+- Verified: Teacher (Abebe Bekele) sees only Mathematics marks and assignments, not English/Physics/etc.
+- Lint passes cleanly

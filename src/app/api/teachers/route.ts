@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getCurrentUser, hasPermission } from '@/lib/auth'
+import bcrypt from 'bcryptjs'
 
-// GET /api/teachers - list all teachers with their user info
+// GET /api/teachers - list all teachers with their user info and assignments
 export async function GET(req: NextRequest) {
   try {
     const user = await getCurrentUser()
@@ -23,10 +24,35 @@ export async function GET(req: NextRequest) {
       ]
     }
 
+    // If teacher is logged in, only return their own record with assignments
+    if (user.role === 'teacher') {
+      const teacher = await db.teacher.findUnique({
+        where: { userId: user.id },
+        include: {
+          user: { select: { email: true, phone: true, avatar: true } },
+          teacherAssignments: {
+            include: {
+              grade: true,
+              section: true,
+              subject: true,
+            },
+          },
+        },
+      })
+      return NextResponse.json({ teachers: teacher ? [teacher] : [] })
+    }
+
     const teachers = await db.teacher.findMany({
       where,
       include: {
-        user: { select: { email: true, phone: true, avatar: true } },
+        user: { select: { email: true, phone: true, avatar: true, active: true } },
+        teacherAssignments: {
+          include: {
+            grade: true,
+            section: true,
+            subject: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     })
@@ -38,7 +64,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/teachers - create teacher
+// POST /api/teachers - create teacher (admin/super_admin only)
 export async function POST(req: NextRequest) {
   try {
     const user = await getCurrentUser()
@@ -51,6 +77,7 @@ export async function POST(req: NextRequest) {
     const {
       email, password, firstName, lastName, gender, qualification,
       specialization, experience, phone, address, salary, photoUrl,
+      academicYear, campus,
     } = body
 
     if (!email || !password || !firstName || !lastName) {
@@ -63,12 +90,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email already in use' }, { status: 400 })
     }
 
-    const bcrypt = await import('bcryptjs')
     const passwordHash = await bcrypt.hash(password, 10)
 
     // Generate teacher ID
     const count = await db.teacher.count()
-    const teacherId = `TCH-2024-${String(count + 1).padStart(3, '0')}`
+    const year = new Date().getFullYear()
+    const teacherId = `TCH-${year}-${String(count + 1).padStart(3, '0')}`
 
     const newUser = await db.user.create({
       data: {
@@ -95,8 +122,13 @@ export async function POST(req: NextRequest) {
         address: address || null,
         salary: salary ? Number(salary) : 0,
         photoUrl: photoUrl || null,
+        academicYear: academicYear || null,
+        campus: campus || null,
       },
-      include: { user: { select: { email: true, phone: true, avatar: true } } },
+      include: {
+        user: { select: { email: true, phone: true, avatar: true } },
+        teacherAssignments: { include: { grade: true, section: true, subject: true } },
+      },
     })
 
     return NextResponse.json({ teacher }, { status: 201 })

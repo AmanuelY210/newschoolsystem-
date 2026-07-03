@@ -19,11 +19,26 @@ export async function GET(req: NextRequest) {
     if (teacherId) where.teacherId = teacherId
     if (status) where.status = status
     if (date) {
-      // Match whole day for SQLite
       const day = new Date(date)
       const next = new Date(day)
       next.setDate(next.getDate() + 1)
       where.date = { gte: day, lt: next }
+    }
+
+    // Teachers can only see attendance they recorded
+    if (user.role === 'teacher') {
+      const teacher = await db.teacher.findUnique({ where: { userId: user.id } })
+      if (teacher) {
+        where.teacherId = teacher.id
+      }
+    }
+
+    // Students can only see their own attendance
+    if (user.role === 'student') {
+      const student = await db.student.findUnique({ where: { userId: user.id } })
+      if (student) {
+        where.studentId = student.id
+      }
     }
 
     const attendance = await db.attendance.findMany({

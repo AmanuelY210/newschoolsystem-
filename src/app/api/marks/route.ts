@@ -32,6 +32,27 @@ export async function GET(req: NextRequest) {
     if (subjectId) where.subjectId = subjectId
     if (term) where.term = term
 
+    // Teachers can only see marks for their assigned subjects
+    if (user.role === 'teacher') {
+      const teacher = await db.teacher.findUnique({
+        where: { userId: user.id },
+        include: { teacherAssignments: true },
+      })
+      if (teacher) {
+        const assignedSubjectIds = teacher.teacherAssignments.map((a: any) => a.subjectId)
+        where.subjectId = { in: assignedSubjectIds }
+        where.teacherId = teacher.id
+      }
+    }
+
+    // Students can only see their own marks
+    if (user.role === 'student') {
+      const student = await db.student.findUnique({ where: { userId: user.id } })
+      if (student) {
+        where.studentId = student.id
+      }
+    }
+
     const marks = await db.mark.findMany({
       where,
       include: {

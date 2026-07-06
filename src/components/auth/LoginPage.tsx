@@ -29,7 +29,7 @@ const DEMO_ACCOUNTS = [
 ]
 
 export function LoginPage() {
-  const { navigateToPublic, navigateToPortal, setUser } = useAppStore()
+  const { navigateToPublic, navigateToPortal, setUser, setSupabaseSession } = useAppStore()
   const { toast } = useToast()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -58,6 +58,31 @@ export function LoginPage() {
 
     setLoading(true)
     try {
+      // Try Supabase Auth first
+      const supaRes = await fetch('/api/supabase/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const supaData = await supaRes.json()
+
+      if (supaRes.ok && supaData.user) {
+        // Supabase login successful
+        setUser(supaData.user)
+        if (supaData.session) {
+          setSupabaseSession({
+            access_token: supaData.session.access_token,
+            refresh_token: supaData.session.refresh_token,
+            expires_at: supaData.session.expires_at,
+          })
+        }
+        toast({ title: 'Welcome!', description: `Logged in as ${supaData.user.name}` })
+        navigateToPortal('dashboard')
+        return
+      }
+
+      // Fallback to regular auth
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

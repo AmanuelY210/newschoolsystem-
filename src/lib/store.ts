@@ -13,12 +13,20 @@ export interface AuthUser {
   avatar?: string | null
 }
 
+export interface SupabaseSession {
+  access_token: string
+  refresh_token?: string
+  expires_at?: number
+}
+
 export type PublicPage = 'home' | 'about' | 'academy' | 'admission-portal' | 'track' | 'media-photos' | 'media-videos' | 'teachers' | 'students' | 'contact'
 
 interface AppState {
   // Auth
   user: AuthUser | null
+  supabaseSession: SupabaseSession | null
   setUser: (user: AuthUser | null) => void
+  setSupabaseSession: (session: SupabaseSession | null) => void
   logout: () => void
 
   // Navigation
@@ -37,15 +45,28 @@ export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
       user: null,
+      supabaseSession: null,
       setUser: (user) => set({ user }),
+      setSupabaseSession: (session) => set({ supabaseSession: session }),
 
       logout: async () => {
+        const session = get().supabaseSession
+        // Try Supabase logout first
+        try {
+          await fetch('/api/supabase/logout', {
+            method: 'POST',
+            headers: session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {},
+          })
+        } catch (e) {
+          console.error('Supabase logout error:', e)
+        }
+        // Also try regular logout
         try {
           await fetch('/api/auth/logout', { method: 'POST' })
         } catch (e) {
           console.error('Logout error:', e)
         }
-        set({ user: null, view: 'public', publicPage: 'home', portalModule: 'dashboard' })
+        set({ user: null, supabaseSession: null, view: 'public', publicPage: 'home', portalModule: 'dashboard' })
       },
 
       view: 'public',
@@ -62,8 +83,9 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'sms-app-store',
-      partialize: (state) => ({ 
-        user: state.user, 
+      partialize: (state) => ({
+        user: state.user,
+        supabaseSession: state.supabaseSession,
         view: state.user ? state.view : 'public',
         publicPage: state.publicPage,
         portalModule: state.portalModule,

@@ -65,11 +65,11 @@ function SidebarContent({ user, navItems, currentModuleId, onNavigate, onViewWeb
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center gap-2 px-6 py-5 border-b">
-        <div className="h-10 w-10 rounded-lg bg-teal-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+        <div className="h-10 w-10 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
           {logo ? (
-            <img src={logo} alt={schoolName} className="h-8 w-8 object-contain" />
+            <img src={logo} alt={schoolName} className="h-10 w-10 object-contain" />
           ) : (
-            <GraduationCap className="h-6 w-6 text-white" />
+            <GraduationCap className="h-6 w-6 text-teal-700" />
           )}
         </div>
         <div className="min-w-0">
@@ -175,13 +175,6 @@ function SidebarContent({ user, navItems, currentModuleId, onNavigate, onViewWeb
 
       {/* Footer */}
       <div className="px-4 py-3 border-t space-y-1">
-        <button
-          onClick={onViewWebsite}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
-        >
-          <Globe className="h-4 w-4" />
-          View Website
-        </button>
         <button
           onClick={onLogout}
           className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
@@ -363,10 +356,6 @@ export function PortalLayout({ children }: PortalLayoutProps) {
                 <DropdownMenuItem onClick={() => setPortalModule('profile')}>
                   <User className="h-4 w-4 mr-2" />
                   My Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigateToPublic('home')}>
-                  <Home className="h-4 w-4 mr-2" />
-                  View Website
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem

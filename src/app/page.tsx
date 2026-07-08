@@ -2,14 +2,13 @@
 
 import { useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
-import { PublicSite } from '@/components/public/PublicSite'
 import { LoginPage } from '@/components/auth/LoginPage'
 import { PortalShell } from '@/components/portal/PortalShell'
 
 export default function Home() {
   const { view, user, setUser, setView } = useAppStore()
 
-  // Check auth state on mount
+  // Check auth state on mount - go straight to login or portal
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -17,24 +16,20 @@ export default function Home() {
         const data = await res.json()
         if (data.user) {
           setUser(data.user)
-          if (useAppStore.getState().view === 'public' || !useAppStore.getState().view) {
-            setView('portal')
-          }
+          setView('portal')
+        } else {
+          setView('login')
         }
       } catch (e) {
-        // Not logged in, stay on public
+        setView('login')
       }
     }
     checkAuth()
   }, [setUser, setView])
 
-  if (view === 'login') {
-    return <LoginPage />
-  }
-
   if (view === 'portal' && user) {
     return <PortalShell />
   }
 
-  return <PublicSite />
+  return <LoginPage />
 }

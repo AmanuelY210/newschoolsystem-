@@ -121,14 +121,6 @@ export function LoginPage() {
         </div>
 
         <div className="relative z-10">
-          <button
-            onClick={() => navigateToPublic('home')}
-            className="flex items-center gap-2 text-white/80 hover:text-white transition-colors mb-12"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Website
-          </button>
-
           <div className="flex items-center gap-3 mb-8">
             <div className="h-14 w-14 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center overflow-hidden">
               {logo ? (

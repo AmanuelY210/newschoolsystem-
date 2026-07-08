@@ -13,81 +13,60 @@ export interface AuthUser {
   avatar?: string | null
 }
 
-export interface SupabaseSession {
-  access_token: string
-  refresh_token?: string
-  expires_at?: number
-}
-
-export type PublicPage = 'home' | 'about' | 'academy' | 'admission-portal' | 'track' | 'media-photos' | 'media-videos' | 'teachers' | 'students' | 'contact'
+export type PublicPage = 'home'
 
 interface AppState {
   // Auth
   user: AuthUser | null
-  supabaseSession: SupabaseSession | null
   setUser: (user: AuthUser | null) => void
-  setSupabaseSession: (session: SupabaseSession | null) => void
   logout: () => void
 
   // Navigation
-  view: 'public' | 'login' | 'portal'
-  publicPage: PublicPage
+  view: 'login' | 'portal'
   portalModule: string
-  setView: (view: 'public' | 'login' | 'portal') => void
-  setPublicPage: (page: PublicPage) => void
+  setView: (view: 'login' | 'portal') => void
   setPortalModule: (module: string) => void
-  navigateToPublic: (page: PublicPage) => void
   navigateToLogin: () => void
   navigateToPortal: (module?: string) => void
+
+  // Real-time update trigger
+  updateTrigger: number
+  triggerUpdate: () => void
 }
 
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
       user: null,
-      supabaseSession: null,
       setUser: (user) => set({ user }),
-      setSupabaseSession: (session) => set({ supabaseSession: session }),
 
       logout: async () => {
-        const session = get().supabaseSession
-        // Try Supabase logout first
-        try {
-          await fetch('/api/supabase/logout', {
-            method: 'POST',
-            headers: session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {},
-          })
-        } catch (e) {
-          console.error('Supabase logout error:', e)
-        }
-        // Also try regular logout
         try {
           await fetch('/api/auth/logout', { method: 'POST' })
         } catch (e) {
           console.error('Logout error:', e)
         }
-        set({ user: null, supabaseSession: null, view: 'public', publicPage: 'home', portalModule: 'dashboard' })
+        set({ user: null, view: 'login', portalModule: 'dashboard' })
       },
 
-      view: 'public',
-      publicPage: 'home',
+      view: 'login',
       portalModule: 'dashboard',
 
       setView: (view) => set({ view }),
-      setPublicPage: (publicPage) => set({ publicPage }),
       setPortalModule: (portalModule) => set({ portalModule }),
 
-      navigateToPublic: (page) => set({ view: 'public', publicPage: page }),
       navigateToLogin: () => set({ view: 'login' }),
       navigateToPortal: (module) => set({ view: 'portal', portalModule: module || 'dashboard' }),
+
+      // Real-time update trigger
+      updateTrigger: 0,
+      triggerUpdate: () => set((state) => ({ updateTrigger: state.updateTrigger + 1 })),
     }),
     {
       name: 'sms-app-store',
       partialize: (state) => ({
         user: state.user,
-        supabaseSession: state.supabaseSession,
-        view: state.user ? state.view : 'public',
-        publicPage: state.publicPage,
+        view: state.user ? state.view : 'login',
         portalModule: state.portalModule,
       }),
     }

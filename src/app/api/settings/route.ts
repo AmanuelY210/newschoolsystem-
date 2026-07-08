@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
+import { firebaseSet } from '@/lib/firebase'
 
-// GET /api/settings - get all site settings (public access)
+// GET /api/settings - get all site settings
 export async function GET() {
   try {
     const settings = await db.siteSetting.findMany()
@@ -10,6 +11,10 @@ export async function GET() {
     for (const s of settings) {
       settingsObject[s.key] = s.value
     }
+
+    // Also sync to Firebase for real-time access
+    await firebaseSet('realtime/settings', { ...settingsObject, updatedAt: new Date().toISOString() }).catch(() => {})
+
     return NextResponse.json({ settings: settingsObject })
   } catch (error) {
     console.error('GET /api/settings error:', error)
@@ -17,7 +22,7 @@ export async function GET() {
   }
 }
 
-// PUT /api/settings - update settings (super_admin only)
+// PUT /api/settings - update settings (super_admin only) - broadcasts in real-time
 export async function PUT(req: NextRequest) {
   try {
     const user = await getCurrentUser()
@@ -48,6 +53,9 @@ export async function PUT(req: NextRequest) {
     for (const s of settings) {
       settingsObject[s.key] = s.value
     }
+
+    // Broadcast to Firebase for real-time updates to all clients
+    await firebaseSet('realtime/settings', { ...settingsObject, updatedAt: new Date().toISOString() }).catch(() => {})
 
     return NextResponse.json({ settings: settingsObject })
   } catch (error) {

@@ -14,14 +14,15 @@ export async function POST(req: NextRequest) {
 
     const user = await db.user.findUnique({
       where: { email: email.toLowerCase() },
-      include: {
-        student: { include: { grade: true, section: true } },
-        teacher: true,
-      },
     })
 
-    if (!user || !user.active) {
+    if (!user) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
+    }
+
+    const isActive = user.active === true || user.active === 'true' || user.active === undefined || user.active === null
+    if (!isActive) {
+      return NextResponse.json({ error: 'Account is disabled. Contact administrator.' }, { status: 403 })
     }
 
     const valid = await verifyPassword(password, user.password)
@@ -31,8 +32,16 @@ export async function POST(req: NextRequest) {
 
     await db.user.update({
       where: { id: user.id },
-      data: { lastLoginAt: new Date() },
+      data: { lastLoginAt: new Date().toISOString(), active: true },
     })
+
+    // Fetch student or teacher profile separately
+    let profile = null
+    if (user.role === 'student') {
+      profile = await db.student.findFirst({ where: { userId: user.id }, include: { grade: true, section: true } })
+    } else if (user.role === 'teacher') {
+      profile = await db.teacher.findFirst({ where: { userId: user.id } })
+    }
 
     const sessionUser = {
       id: user.id,
@@ -45,26 +54,25 @@ export async function POST(req: NextRequest) {
     const token = await createSession(sessionUser)
     await setSessionCookie(token)
 
-    // Sync user presence to Firebase
+    // Sync to Firebase
     await firebaseSet(`presence/${user.id}`, {
       name: user.name,
       email: user.email,
       role: user.role,
       online: true,
       lastSeen: new Date().toISOString(),
-    })
+    }).catch(() => {})
 
-    // Log login event to Firebase
     await firebasePush('events/logins', {
       userId: user.id,
       name: user.name,
       role: user.role,
       timestamp: new Date().toISOString(),
-    })
+    }).catch(() => {})
 
     return NextResponse.json({
       user: sessionUser,
-      profile: user.student || user.teacher || null,
+      profile: profile || null,
     })
   } catch (error) {
     console.error('Login error:', error)

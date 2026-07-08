@@ -1,13 +1,5 @@
-import { PrismaClient } from '@prisma/client'
+// Database client - Firebase Realtime Database (replaces Prisma)
+// Project: amanuelschool-78888
+// All data is stored in Firebase: https://newschool-15515-default-rtdb.firebaseio.com/
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
-
-export const db =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    log: ['query'],
-  })
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
+export { db } from './firebase-db'
